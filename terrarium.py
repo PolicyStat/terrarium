@@ -3,37 +3,48 @@
 import logging
 import os
 import hashlib
-#import tempfile
-#import sys
+import sys
 
 import argparse
+
+try:
+    import boto # noqa
+except ImportError:
+    boto = None # noqa
 
 logger = logging.getLogger(__name__)
 
 
 class Terrarium(object):
-    def __init__(self, requirements, digest='md5'):
-        self.requirements = self._load_requirements(requirements)
-        self.digest = self.get_digest(digest)
+    def __init__(self, req_files, digest_type='md5'):
+        self._req_files = req_files
+        self._digest_type = digest_type
+        self._requirements = None
+        self._digest = None
 
-    def get_digest(self, digest='md5'):
-        if hasattr(self, 'digest'):
-            return self.digest
-        m = hashlib.new(digest)
+    @property
+    def digest(self):
+        if self._digest is not None:
+            return self._digest
+        m = hashlib.new(self._digest_type)
         m.update('\n'.join(self.requirements))
-        self.digest = m.hexdigest()
-        return self.digest
+        self._digest = m.hexdigest()
+        return self._digest
 
-    def _load_requirements(self, requirements):
+    @property
+    def requirements(self):
+        if self._requirements is not None:
+            return self._requirements
         lines = []
-        for arg in requirements:
+        for arg in self._req_files:
             if os.path.exists(arg):
                 with open(arg, 'r') as f:
                     for line in f.readlines():
                         line = line.strip()
                         if line:
                             lines.append(line)
-        return sorted(lines)
+        self._requirements = sorted(lines)
+        return self._requirements
 
 
 def main():
@@ -55,7 +66,7 @@ def main():
         help='Decrease verbosity',
     )
     ap.add_argument(
-        '--digest',
+        '--digest-type',
         default='md5',
         help='Choose digest type (md5, sha, ...)',
     )
@@ -76,8 +87,7 @@ def main():
         help='Path to the virtualenv',
     )
 
-    try:
-        import boto # noqa
+    if boto:
         ap.add_argument(
             '--s3-bucket',
             default=os.environ.get('S3_BUCKET', None),
@@ -95,8 +105,6 @@ def main():
             default=os.environ.get('S3_MAX_RETRIES', 1),
             help='Number of times to attempt a S3 action before giving up',
         )
-    except ImportError:
-        pass
 
     subparsers = ap.add_subparsers(
         title='Basic Commands',
@@ -129,14 +137,14 @@ def main():
     logger.setLevel(sum(args.v))
     logger.addHandler(logging.StreamHandler())
 
-    terrarium = Terrarium(args.reqs, digest=args.digest)
+    terrarium = Terrarium(args.reqs, digest_type=args.digest_type)
 
     if args.command == 'hash':
-        print terrarium.get_digest()
+        print terrarium.digest
     elif args.command == 'exists':
-        pass
+        sys.exit(0)
     elif args.command == 'install':
-        pass
+        terrarium.install()
     else:
         ap.print_help()
 

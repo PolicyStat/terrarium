@@ -16,9 +16,6 @@ except ImportError:
 from virtualenv import (  # noqa
     call_subprocess,
     create_bootstrap_script,
-    join,
-    make_environment_relocatable,
-    path_locations,
 )
 
 logger = logging.getLogger(__name__)
@@ -184,12 +181,6 @@ class Terrarium(object):
 
     def create_bootstrap(self, dest):
         extra_text = '''
-def set_logger_level(level):
-    for i in range(len(logger.consumers)):
-        consumer = logger.consumers[i]
-        if consumer[1] == sys.stdout:
-            logger.consumers[i] = (level, sys.stdout)
-
 def adjust_options(options, args):
     options.use_distribute = True
     options.system_site_packages = False
@@ -197,23 +188,40 @@ def adjust_options(options, args):
 REQUIREMENTS = %(REQUIREMENTS)s
 
 def after_install(options, base):
-    set_logger_level(Logger.INFO)
-    import shlex
+    # Debug logging for virtualenv
+    logger.consumers = [(logger.DEBUG, sys.stdout)]
+
+    home_dir, lib_dir, inc_dir, bin_dir = path_locations(base)
+
+    # Update prefix and executable to point to the virtualenv
+    sys.prefix = os.path.abspath(base)
+    sys.executable = join(os.path.abspath(bin_dir), 'python')
+
+    # Create a symlink for pythonM.N
+    pyversion = (sys.version_info[0], sys.version_info[1])
+    os.symlink('python', join(bin_dir, 'python%%d.%%d' %% pyversion))
+
+    # Activate the virtualenv
+    activate_this = join(bin_dir, 'activate_this.py')
+    execfile(activate_this, dict(__file__=activate_this))
+
+    import pip
     from pip.commands.install import InstallCommand
-    from pip import version_control
-    # Load version control modules
-    version_control()
+    import shlex
+
+    # Debug logging for pip
+    pip.logger.consumers = [(pip.logger.DEBUG, sys.stdout)]
+
+    # Load version control modules for installing 'editables'
+    pip.version_control()
+
+    # Run pip install
     c = InstallCommand()
     reqs = shlex.split(' '.join(REQUIREMENTS))
     options, args = c.parser.parse_args(reqs)
+    options.require_venv = True
     requirementSet = c.run(options, args)
-    # making a virtualenv relocatable can fail for a variety of reasons of
-    # which are all silently discarded unless you increase the logging
-    # verbosity
-    set_logger_level(Logger.DEBUG)
-    home_dir, lib_dir, inc_dir, bin_dir = path_locations(base)
-    activate_this = join(bin_dir, 'activate_this.py')
-    execfile(activate_this, dict(__file__=activate_this))
+
     make_environment_relocatable(base)
         '''
         output = create_bootstrap_script(

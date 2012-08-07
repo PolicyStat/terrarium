@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import tempfile
+import shutil
 
 try:
     import boto  # noqa
@@ -57,15 +58,129 @@ class Terrarium(object):
     def install(self):
         logger.debug('Running install')
 
+        environment = self.args.environment
+        prompt = os.path.basename(environment)
+        if os.path.isdir(environment):
+            environment = tempfile.mkdtemp(
+                prefix=os.path.basename(environment),
+                dir=os.path.dirname(environment),
+            )
+
+        if self.args.download:
+            if self.download(environment):
+                return
+
+        logger.info('Building new environment')
         fd, bootstrap = tempfile.mkstemp(
             prefix='terrarium_bootstrap-',
             suffix='.py',
         )
         self.create_bootstrap(bootstrap)
 
-        #call_subprocess(['python', bootstrap])
-
+        call_subprocess([
+            sys.executable,
+            bootstrap,
+            '--prompt=(%s)' % prompt,
+            environment
+        ])
         os.close(fd)
+
+        if self.args.upload:
+            self.upload(environment)
+
+    def download(self, environment):
+        if self.args.storage_dir:
+            remote_archive = os.path.join(
+                self.args.storage_dir,
+                self.digest,
+            )
+            if os.path.exists(remote_archive):
+                logger.info(
+                    'Copying environment from %s'
+                    % self.args.storage_dir,
+                )
+                local_archive = '%s.tar.gz' % environment
+                shutil.copyfile(
+                    remote_archive,
+                    local_archive,
+                )
+                return True
+            logger.error('Download archive failed')
+        if boto and self.args.s3_bucket:
+            bucket = self._get_s3_bucket()
+            if bucket:
+                key = bucket.get_key(self.digest)
+                if key:
+                    logger.info('Downloading environment from S3')
+                    fd, archive = tempfile.mkstemp()
+                    key.get_contents_to_filename(archive)
+                    # TODO
+                    os.close(fd)
+                    os.unlink(archive)
+                    return True
+
+    def _get_s3_bucket(self):
+        if not boto:
+            return None
+        conn = boto.S3Connection(
+            aws_access_key_id=self.args.s3_access_key,
+            aws_secret_access_key=self.args.s3_secret_key
+        )
+        try:
+            conn.create_bucket(
+                self.args.s3_bucket,
+                policy='public-read',
+            )
+        except boto.S3CreateError:
+            pass
+        return boto.Bucket(conn, name=self.args.s3_bucket)
+
+    def archive(self, environment):
+        logger.info('Building environment archive')
+        # TODO
+        return None
+
+    def upload(self, environment):
+        if self.args.storage_dir:
+            logger.info('Copying environment to storage directory')
+            dest = os.path.join(
+                self.args.storage_dir,
+                self.digest,
+            )
+            if os.path.exists(dest):
+                logger.error(
+                    'Environment already exists at %s'
+                    % dest,
+                )
+            else:
+                archive = self.archive(environment)
+                if not archive:
+                    logger.error('Archiving failed')
+                shutil.copyfile(archive, dest)
+                logger.info('Archive copied to storage directory')
+        if boto and self.args.s3_bucket:
+            logger.info('Uploading environment to S3')
+            attempts = 0
+            bucket = self._get_s3_bucket()
+            if bucket:
+                key = bucket.new_key(self.digest)
+                archive = self.archive(environment)
+                if not archive:
+                    logger.error('Archiving failed')
+                try:
+                    key.set_contents_from_filename(archive)
+                    logger.debug('upload finished')
+                    return True
+                except Exception:
+                    attempts = attempts + 1
+                    logger.warning('There was an error uploading the file')
+                    if attempts > self.args.s3_max_retries:
+                        logger.error(
+                            'Attempted to upload archive to S3, but failed'
+                        )
+                        raise
+                    else:
+                        logger.info('Retrying S3 upload')
 
     def create_bootstrap(self, dest):
         extra_text = '''

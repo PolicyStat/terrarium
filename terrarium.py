@@ -165,27 +165,41 @@ def main():
     )
     ap.add_argument(
         '-E', '--environment',
+        dest='environment',
         default=os.environ.get('VIRTUAL_ENV', None),
-        help='Path to the virtualenv',
+        help='''
+            Replace or build new environment at this location. If you are
+            already within a virtual environment, this option defaults to
+            VIRTUAL_ENV.
+        ''',
     )
 
     if boto:
         ap.add_argument(
             '--s3-bucket',
             default=os.environ.get('S3_BUCKET', None),
+            help='''
+                S3 bucket name. Defaults to S3_BUCKET env variable.
+            '''
         )
         ap.add_argument(
             '--s3-access-key',
             default=os.environ.get('S3_ACCESS_KEY', None),
+            help='''
+                Defaults to S3_ACCESS_KEY env variable.
+            '''
         )
         ap.add_argument(
             '--s3-secret-key',
             default=os.environ.get('S3_SECRET_KEY', None),
+            help='''
+                Defaults to S3_SECRET_KEY env variable.
+            '''
         )
         ap.add_argument(
             '--s3-max-retries',
             default=os.environ.get('S3_MAX_RETRIES', 1),
-            help='Number of times to attempt a S3 action before giving up',
+            help='Number of times to attempt a S3 operation before giving up',
         )
 
     subparsers = ap.add_subparsers(
@@ -207,7 +221,7 @@ def main():
             'install',
             help='''
                 Replace current environment with the one given by the
-                requirement set
+                requirement set.
             ''',
         ),
     }

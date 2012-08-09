@@ -321,6 +321,20 @@ def parse_args():
         default='md5',
         help='Choose digest type (md5, sha, see hashlib)',
     )
+    ap.add_argument(
+        '--no-bootstrap',
+        default=True,
+        action='store_false',
+        dest='bootstrap',
+        help='''
+            By default, terrarium will create a script called
+            'terrarium_bootstrap.py' in the new environment bin directory.
+            Running this script will create a new environment at the specified
+            location using all of the packages that were defined at the time of
+            its creation. To prevent this script from being created, use
+            --no-bootstrap.
+        ''',
+    )
 
     if boto:
         ap.add_argument(

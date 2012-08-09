@@ -56,18 +56,25 @@ class Terrarium(object):
     def install(self):
         logger.debug('Running install')
 
-        environment = self.args.environment
-        prompt = os.path.basename(environment)
-        if os.path.isdir(environment):
-            environment = tempfile.mkdtemp(
-                prefix=os.path.basename(environment),
-                dir=os.path.dirname(environment),
+        old_target = self.args.target
+        new_target = old_target
+        prompt = os.path.basename(new_target)
+
+        # Are we building a new environment, or replacing an existing one?
+        old_target_exists = os.path.isdir(old_target)
+        if old_target_exists:
+            new_target = tempfile.mkdtemp(
+                prefix='%s.' % os.path.basename(old_target),
+                dir=os.path.dirname(old_target),
             )
 
+        # Can the requested environment be downloaded?
         if self.args.download:
-            if self.download(environment):
+            if self.download(new_target):
                 return
 
+        # Create a self-contained script to create a virtual environment and
+        # install all of the requested requirements
         logger.info('Building new environment')
         fd, bootstrap = tempfile.mkstemp(
             prefix='terrarium_bootstrap-',
@@ -75,18 +82,40 @@ class Terrarium(object):
         )
         self.create_bootstrap(bootstrap)
 
+        # Run the bootstrap script which pip installs everything that has been
+        # defined as a requirement
         call_subprocess([
             sys.executable,
             bootstrap,
             '--prompt=(%s)' % prompt,
-            environment
+            new_target
         ])
+
+        # Do we want to copy the bootstrap into the environment for future use?
+        if self.args.bootstrap:
+            logger.info('Copying bootstrap script to new environment')
+            dest = os.path.join(new_target, 'bin', 'terrarium_bootstrap.py')
+            shutil.copyfile(bootstrap, dest)
+            os.chmod(dest, 0744)
         os.close(fd)
 
         if self.args.upload:
-            self.upload(environment)
+            self.upload(new_target)
 
-    def download(self, environment):
+        old_target_backup = '%s%s' % (old_target, self.args.backup_suffix)
+        if old_target_exists:
+            logger.info('Moving old environment out of the way')
+            os.rename(old_target, old_target_backup)
+
+        # move the new environment into the target's place
+        os.rename(new_target, old_target)
+
+        # Do we keep a backup of the old environment around or wipe it?
+        if os.path.isdir(old_target_backup) and not self.args.backup:
+            logger.info('Deleting old environment')
+            shutil.rmtree(old_target_backup)
+
+    def download(self, target):
         if self.args.storage_dir:
             remote_archive = os.path.join(
                 self.args.storage_dir,
@@ -97,7 +126,7 @@ class Terrarium(object):
                     'Copying environment from %s'
                     % self.args.storage_dir,
                 )
-                local_archive = '%s.tar.gz' % environment
+                local_archive = '%s.tar.gz' % target
                 shutil.copyfile(
                     remote_archive,
                     local_archive,
@@ -133,12 +162,12 @@ class Terrarium(object):
             pass
         return boto.Bucket(conn, name=self.args.s3_bucket)
 
-    def archive(self, environment):
+    def archive(self, target):
         logger.info('Building environment archive')
         # TODO
         return None
 
-    def upload(self, environment):
+    def upload(self, target):
         if self.args.storage_dir:
             logger.info('Copying environment to storage directory')
             dest = os.path.join(
@@ -151,7 +180,7 @@ class Terrarium(object):
                     % dest,
                 )
             else:
-                archive = self.archive(environment)
+                archive = self.archive(target)
                 if not archive:
                     logger.error('Archiving failed')
                 shutil.copyfile(archive, dest)
@@ -162,7 +191,7 @@ class Terrarium(object):
             bucket = self._get_s3_bucket()
             if bucket:
                 key = bucket.new_key(self.digest)
-                archive = self.archive(environment)
+                archive = self.archive(target)
                 if not archive:
                     logger.error('Archiving failed')
                 try:

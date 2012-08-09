@@ -392,8 +392,6 @@ def main():
         sys.exit(0)
     elif args.command == 'install':
         terrarium.install()
-    else:
-        ap.print_help()
 
 if __name__ == '__main__':
     main()

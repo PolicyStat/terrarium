@@ -2,11 +2,12 @@
 
 import argparse
 import hashlib
-import logging
 import os
 import sys
 import tempfile
 import shutil
+
+from logging import getLogger, StreamHandler, WARN
 
 try:
     import boto  # noqa
@@ -18,7 +19,7 @@ from virtualenv import (  # noqa
     create_bootstrap_script,
 )
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class Terrarium(object):
@@ -241,7 +242,7 @@ def parse_args():
         '-v', '--verbose',
         action='append_const',
         const=-10,
-        default=[logging.WARN],
+        default=[WARN],
         dest='v',
         help='Increase verbosity',
     )
@@ -249,7 +250,7 @@ def parse_args():
         '-q', '--quiet',
         action='append_const',
         const=10,
-        default=[logging.WARN],
+        default=[WARN],
         dest='v',
         help='Decrease verbosity',
     )
@@ -382,7 +383,7 @@ def main():
     args = parse_args()
 
     logger.setLevel(sum(args.v))
-    logger.addHandler(logging.StreamHandler())
+    logger.addHandler(StreamHandler())
 
     terrarium = Terrarium(args)
 

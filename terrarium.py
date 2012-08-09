@@ -115,36 +115,15 @@ class Terrarium(object):
             logger.info('Deleting old environment')
             shutil.rmtree(old_target_backup)
 
-    def download(self, target):
-        if self.args.storage_dir:
-            remote_archive = os.path.join(
-                self.args.storage_dir,
-                self.digest,
-            )
-            if os.path.exists(remote_archive):
-                logger.info(
-                    'Copying environment from %s'
-                    % self.args.storage_dir,
-                )
-                local_archive = '%s.tar.gz' % target
-                shutil.copyfile(
-                    remote_archive,
-                    local_archive,
-                )
-                return True
-            logger.error('Download archive failed')
-        if boto and self.args.s3_bucket:
-            bucket = self._get_s3_bucket()
-            if bucket:
-                key = bucket.get_key(self.digest)
-                if key:
-                    logger.info('Downloading environment from S3')
-                    fd, archive = tempfile.mkstemp()
-                    key.get_contents_to_filename(archive)
-                    # TODO
-                    os.close(fd)
-                    os.unlink(archive)
-                    return True
+    def archive(self, target):
+        logger.info('Building terrarium bundle')
+        # TODO
+        return None
+
+    def extract(self, archive, target):
+        logger.info('Extracting terrarium bundle')
+        # TODO
+        return None
 
     def _get_s3_bucket(self):
         if not boto:
@@ -162,10 +141,37 @@ class Terrarium(object):
             pass
         return boto.Bucket(conn, name=self.args.s3_bucket)
 
-    def archive(self, target):
-        logger.info('Building environment archive')
-        # TODO
-        return None
+    def download(self, target):
+        if self.args.storage_dir:
+            remote_archive = os.path.join(
+                self.args.storage_dir,
+                self.digest,
+            )
+            if os.path.exists(remote_archive):
+                logger.info(
+                    'Copying environment from %s'
+                    % self.args.storage_dir,
+                )
+                local_archive = '%s.tar.gz' % target
+                shutil.copyfile(
+                    remote_archive,
+                    local_archive,
+                )
+                self.extract(local_archive, target)
+                return True
+            logger.error('Download archive failed')
+        if boto and self.args.s3_bucket:
+            bucket = self._get_s3_bucket()
+            if bucket:
+                key = bucket.get_key(self.digest)
+                if key:
+                    logger.info('Downloading environment from S3')
+                    fd, archive = tempfile.mkstemp()
+                    key.get_contents_to_filename(archive)
+                    self.extract(archive, target)
+                    os.close(fd)
+                    os.unlink(archive)
+                    return True
 
     def upload(self, target):
         if self.args.storage_dir:

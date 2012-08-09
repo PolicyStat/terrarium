@@ -180,7 +180,16 @@ class Terrarium(object):
                         logger.info('Retrying S3 upload')
 
     def create_bootstrap(self, dest):
-        extra_text = '''
+        extra_text = (
+            TERRARIUM_BOOTSTRAP_EXTRA_TEXT %
+                {'REQUIREMENTS': self.requirements}
+        )
+        output = create_bootstrap_script(extra_text)
+        with open(dest, 'w') as f:
+            f.write(output)
+
+
+TERRARIUM_BOOTSTRAP_EXTRA_TEXT = '''
 def adjust_options(options, args):
     options.use_distribute = True
     options.system_site_packages = False
@@ -223,12 +232,7 @@ def after_install(options, base):
     requirementSet = c.run(options, args)
 
     make_environment_relocatable(base)
-        '''
-        output = create_bootstrap_script(
-            extra_text % {'REQUIREMENTS': self.requirements}
-        )
-        with open(dest, 'w') as f:
-            f.write(output)
+'''
 
 
 def main():
@@ -250,20 +254,25 @@ def main():
         help='Decrease verbosity',
     )
     ap.add_argument(
-        '--digest-type',
-        default='md5',
-        help='Choose digest type (md5, sha, ...)',
+        '-t', '--target',
+        dest='target',
+        default=os.environ.get('VIRTUAL_ENV', None),
+        help='''
+            Replace or build new environment at this location. If you are
+            already within a virtual environment, this option defaults to
+            VIRTUAL_ENV.
+        ''',
     )
-
     ap.add_argument(
         '--no-download',
         default=True,
         action='store_false',
         dest='download',
         help='''
-            Normally, terrarium will pull down an existing bundle instead of
-            building a new one. This option forces terrarium to build a new
-            environment.
+            If an external storage location is specified, terrarium will
+            attempt to download an existing terrarium bundle instead of
+            building a new one. Using --no-download forces terrarium to build a
+            new environment.
         ''',
     )
     ap.add_argument(
@@ -272,29 +281,44 @@ def main():
         action='store_false',
         dest='upload',
         help='''
-            Normally, terrarium will attempt to upload a new environment after
-            it has been built. This option prevents this behavior.
+            If an external storage location is specified, terrarium will upload
+            a new environment after it has been built. Using --no-upload,
+            terrarium will not upload the resulting environment to the external
+            storage location.
         ''',
+    )
+    ap.add_argument(
+        '--no-backup',
+        default=True,
+        action='store_false',
+        dest='backup',
+        help='''
+            By default, terrarium preserves the old environment. See
+            --backup-suffix. Using this option, terrarium will delete the old
+            environment.
+        ''',
+    )
+    ap.add_argument(
+        '--backup-suffix',
+        default='.bak',
+        help='''
+            The suffix to use when preserving an old environment. This option
+            is ignored if --no-backup is used.
+        '''
     )
     ap.add_argument(
         '--storage-dir',
         default=None,
         help='''
-            Path to a directory in which virtualenvs will be retrieved and
-            stored for speedy re-installation. This will usually be a shared
-            drive.  That allows other folks on your team (or servers) to
-            benefit from crazy-fast installations.
+            Path to a directory in which terrarium bundles will be retrieved
+            and stored for speedy re-installation. This will usually be a
+            shared drive.
         ''',
     )
     ap.add_argument(
-        '-E', '--environment',
-        dest='environment',
-        default=os.environ.get('VIRTUAL_ENV', None),
-        help='''
-            Replace or build new environment at this location. If you are
-            already within a virtual environment, this option defaults to
-            VIRTUAL_ENV.
-        ''',
+        '--digest-type',
+        default='md5',
+        help='Choose digest type (md5, sha, see hashlib)',
     )
 
     if boto:

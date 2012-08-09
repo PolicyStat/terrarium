@@ -40,7 +40,7 @@ folks on your team (or servers) to benefit from crazy-fast installations.
 If given, upload the packaged virtualenv to this s3 bucket instead of to the
 `storage-dir`.
 
-	-E DIR, --environment=DIR
+	-t DIR, --target=DIR
 
 virtualenv environment on which to act
 

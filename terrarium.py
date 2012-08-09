@@ -235,7 +235,7 @@ def after_install(options, base):
 '''
 
 
-def main():
+def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument(
         '-v', '--verbose',
@@ -375,7 +375,11 @@ def main():
 
     for command in commands.values():
         command.add_argument('reqs', nargs=argparse.REMAINDER)
-    args = ap.parse_args()
+    return ap.parse_args()
+
+
+def main():
+    args = parse_args()
 
     logger.setLevel(sum(args.v))
     logger.addHandler(logging.StreamHandler())

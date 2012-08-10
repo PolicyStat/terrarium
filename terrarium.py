@@ -32,6 +32,8 @@ MAGIC_NUM = {
 }
 
 
+# Helper method to determine the actual type of the file without relying on the
+# file extension
 def get_type(path):
     with open(path) as f:
         for file_type, magic in MAGIC_NUM.items():

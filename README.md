@@ -1,5 +1,7 @@
 # Terrarium
 
+[![Build Status](https://secure.travis-ci.org/PolicyStat/terrarium.png)](http://travis-ci.org/PolicyStat/terrarium)
+
 Package and ship relocatable python virtualenvs, like a boss.
 
 Terrarium will package up 

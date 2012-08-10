@@ -46,11 +46,17 @@ class TestTerrarium(unittest.TestCase):
         )
         return output, return_code
 
-    def _install(self):
+    def _install(self, **kwargs):
         command = '-t %s install %s' % (
             self.target,
             self.requirements,
         )
+        options = []
+        for key, value in kwargs.items():
+            options.append('--%s' % key.replace('_', '-'))
+            if value is not None:
+                options.append(value)
+        command = ' '.join(options) + command
         output, return_code = self._terrarium(command)
         return output, return_code
 

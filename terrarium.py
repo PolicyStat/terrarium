@@ -198,7 +198,7 @@ class Terrarium(object):
         ])
 
         if self.args.compress:
-            # Compress
+            # Compress the tarball
             call_subprocess(['gzip', archive])
             return '%s.gz' % archive
 

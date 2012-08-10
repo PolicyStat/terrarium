@@ -21,6 +21,24 @@ from virtualenv import (  # noqa
 
 logger = getLogger(__name__)
 
+# http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
+MAGIC_NUM = {
+            # magic code, offset
+    'ELF': ('.ELF', 0),
+    'GZIP': ('\x1f\x8b', 0),
+    'BZIP': ('\x42\x5a', 0),
+    'TAR': ('ustar', 257),
+}
+
+
+def get_type(path):
+    with open(path) as f:
+        for file_type, magic in MAGIC_NUM.items():
+            f.seek(magic[1])
+            if magic[0] == f.read(len(magic[0])):
+                    return file_type
+    return None
+
 
 class Terrarium(object):
     def __init__(self, args):
@@ -56,12 +74,16 @@ class Terrarium(object):
     def install(self):
         logger.debug('Running install')
 
-        old_target = self.args.target
+        old_target = os.path.abspath(self.args.target)
         new_target = old_target
         prompt = os.path.basename(new_target)
 
         # Are we building a new environment, or replacing an existing one?
-        old_target_exists = os.path.isdir(old_target)
+        old_target_exists = os.path.exists(os.path.join(
+            old_target,
+            'bin',
+            'activate',
+        ))
         if old_target_exists:
             new_target = tempfile.mkdtemp(
                 prefix='%s.' % os.path.basename(old_target),
@@ -98,6 +120,7 @@ class Terrarium(object):
             shutil.copyfile(bootstrap, dest)
             os.chmod(dest, 0744)
         os.close(fd)
+        os.unlink(bootstrap)
 
         if self.args.upload:
             self.upload(new_target)
@@ -115,15 +138,96 @@ class Terrarium(object):
             logger.info('Deleting old environment')
             shutil.rmtree(old_target_backup)
 
+    @staticmethod
+    def replace_all_in_directory(location, old,
+            replace='__VIRTUAL_ENV__', binary=False):
+        for name in os.listdir(location):
+            full_path = os.path.join(location, name)
+            data = None
+            with open(full_path) as f:
+                header = f.read(len(MAGIC_NUM['ELF']))
+                # Skip binary files
+                if binary or header != MAGIC_NUM['ELF']:
+                    data = header + f.read()
+            if not data:
+                continue
+            new_data = data.replace(old, replace)
+            if new_data == data:
+                continue
+            with open(full_path, 'w') as f:
+                data = f.write(new_data)
+
+    @staticmethod
+    def wipe_all_precompiled_python_files_in_dir(path):
+        return call_subprocess([
+            'find', path, '-type', 'f', '-name', '*.py[c|o]', '-delete'
+        ])
+
+    @staticmethod
+    def make_bin_dir_paths_relative(bin_dir, target):
+        Terrarium.replace_all_in_directory(bin_dir, target)
+
+    @staticmethod
+    def make_bin_dir_paths_absolute(bin_dir, target):
+        Terrarium.replace_all_in_directory(
+            bin_dir,
+            '__VIRTUAL_ENV__',
+            target,
+        )
+
     def archive(self, target):
         logger.info('Building terrarium bundle')
-        # TODO
-        return None
+
+        bin_dir = os.path.join(target, 'bin')
+
+        Terrarium.wipe_all_precompiled_python_files_in_dir(target)
+        Terrarium.make_bin_dir_paths_relative(bin_dir, target)
+
+        archive = '%s.tar' % target
+
+        # Create an archive of the environment
+        call_subprocess([
+            'tar', '--exclude-vcs',
+            '--exclude', 'bin/python',
+            '-cf', archive,
+            '-C', target,
+            '.'
+        ])
+
+        if self.args.compress:
+            # Compress
+            call_subprocess(['gzip', archive])
+            return '%s.gz' % archive
+
+        Terrarium.make_bin_dir_paths_absolute(bin_dir, target)
+        return archive
 
     def extract(self, archive, target):
         logger.info('Extracting terrarium bundle')
-        # TODO
-        return None
+
+        archive_type = get_type(archive)
+
+        if archive_type == 'GZIP':
+            tar_op = 'xzf'
+        elif archive_type == 'BZIP':
+            tar_op = 'xjf'
+        elif archive_type == 'TAR':
+            tar_op = 'xf'
+        else:
+            logger.error(
+                'Failed to extract archive, unknown or unsupported file type')
+            return
+        os.mkdir(target)
+        call_subprocess(['tar', tar_op, archive, '-C', target])
+
+        bin_dir = os.path.join(target, 'bin')
+
+        # Restore python binary
+        path_to_python = sys.executable
+        call_subprocess(['cp', path_to_python, bin_dir])
+
+        # Fix up paths
+        Terrarium.make_bin_dir_paths_absolute(bin_dir, target)
 
     def _get_s3_bucket(self):
         if not boto:
@@ -145,7 +249,7 @@ class Terrarium(object):
         if self.args.storage_dir:
             remote_archive = os.path.join(
                 self.args.storage_dir,
-                self.digest,
+                self.make_remote_key(),
             )
             if os.path.exists(remote_archive):
                 logger.info(
@@ -158,12 +262,13 @@ class Terrarium(object):
                     local_archive,
                 )
                 self.extract(local_archive, target)
+                os.unlink(local_archive)
                 return True
             logger.error('Download archive failed')
         if boto and self.args.s3_bucket:
             bucket = self._get_s3_bucket()
             if bucket:
-                key = bucket.get_key(self.digest)
+                key = bucket.get_key(self.make_remote_key())
                 if key:
                     logger.info('Downloading environment from S3')
                     fd, archive = tempfile.mkstemp()
@@ -173,47 +278,68 @@ class Terrarium(object):
                     os.unlink(archive)
                     return True
 
+    def make_remote_key(self):
+        import platform
+        major, minor, patch = platform.python_version_tuple()
+        context = {
+            'digest': self.digest,
+            'python_vmajor': major,
+            'python_vminor': minor,
+            'python_vpatch': patch,
+            'arch': platform.machine(),
+        }
+        return self.args.remote_key_format % context
+
+    def upload_to_storage_dir(self, target, storage_dir):
+        logger.info('Copying environment to storage directory')
+        dest = os.path.join(storage_dir, self.make_remote_key())
+        if os.path.exists(dest):
+            logger.error(
+                'Environment already exists at %s'
+                % dest,
+            )
+        else:
+            archive = self.archive(target)
+            if not archive:
+                logger.error('Archiving failed')
+            shutil.copyfile(archive, dest)
+            logger.info('Archive copied to storage directory')
+            os.unlink(archive)
+
+    def upload_to_s3(self, target):
+        logger.info('Uploading environment to S3')
+        attempts = 0
+        bucket = self._get_s3_bucket()
+        if not bucket:
+            return False
+
+        key = bucket.new_key(self.make_remote_key())
+        archive = self.archive(target)
+        if not archive:
+            logger.error('Archiving failed')
+
+        try:
+            key.set_contents_from_filename(archive)
+            logger.debug('upload finished')
+            os.unlink(archive)
+            return True
+        except Exception:
+            attempts = attempts + 1
+            logger.warning('There was an error uploading the file')
+            if attempts > self.args.s3_max_retries:
+                logger.error(
+                    'Attempted to upload archive to S3, but failed'
+                )
+                raise
+            else:
+                logger.info('Retrying S3 upload')
+
     def upload(self, target):
         if self.args.storage_dir:
-            logger.info('Copying environment to storage directory')
-            dest = os.path.join(
-                self.args.storage_dir,
-                self.digest,
-            )
-            if os.path.exists(dest):
-                logger.error(
-                    'Environment already exists at %s'
-                    % dest,
-                )
-            else:
-                archive = self.archive(target)
-                if not archive:
-                    logger.error('Archiving failed')
-                shutil.copyfile(archive, dest)
-                logger.info('Archive copied to storage directory')
+            self.upload_to_storage_dir(target,
+                    self.args.storage_dir)
         if boto and self.args.s3_bucket:
-            logger.info('Uploading environment to S3')
-            attempts = 0
-            bucket = self._get_s3_bucket()
-            if bucket:
-                key = bucket.new_key(self.digest)
-                archive = self.archive(target)
-                if not archive:
-                    logger.error('Archiving failed')
-                try:
-                    key.set_contents_from_filename(archive)
-                    logger.debug('upload finished')
-                    return True
-                except Exception:
-                    attempts = attempts + 1
-                    logger.warning('There was an error uploading the file')
-                    if attempts > self.args.s3_max_retries:
-                        logger.error(
-                            'Attempted to upload archive to S3, but failed'
-                        )
-                        raise
-                    else:
-                        logger.info('Retrying S3 upload')
+            self.upload_to_s3(target)
 
     def create_bootstrap(self, dest):
         extra_text = (
@@ -339,8 +465,18 @@ def parse_args():
         default='.bak',
         help='''
             The suffix to use when preserving an old environment. This option
-            is ignored if --no-backup is used.
+            is ignored if --no-backup is used. Default is .bak.
         '''
+    )
+    ap.add_argument(
+        '--no-compress',
+        default=True,
+        action='store_false',
+        dest='compress',
+        help='''
+            By default, terrarium compresses the archive using gzip before
+            uploading it.
+        ''',
     )
     ap.add_argument(
         '--storage-dir',
@@ -354,7 +490,7 @@ def parse_args():
     ap.add_argument(
         '--digest-type',
         default='md5',
-        help='Choose digest type (md5, sha, see hashlib)',
+        help='Choose digest type (md5, sha, see hashlib). Default is md5.',
     )
     ap.add_argument(
         '--no-bootstrap',
@@ -369,6 +505,16 @@ def parse_args():
             its creation. To prevent this script from being created, use
             --no-bootstrap.
         ''',
+    )
+    default_remote_key_format = '''
+        %(arch)s-%(python_vmajor)s.%(python_vminor)s-%(digest)s
+    '''.strip()
+    ap.add_argument(
+        '--remote-key-format',
+        default=default_remote_key_format,
+        help='''
+            Key name format to use when storing the archive. Default is "%s"
+        ''' % default_remote_key_format.replace('%', '%%'),
     )
 
     if boto:
@@ -395,8 +541,11 @@ def parse_args():
         )
         ap.add_argument(
             '--s3-max-retries',
-            default=os.environ.get('S3_MAX_RETRIES', 1),
-            help='Number of times to attempt a S3 operation before giving up',
+            default=os.environ.get('S3_MAX_RETRIES', 3),
+            help='''
+                Number of times to attempt a S3 operation before giving up.
+                Default is 3.
+            ''',
         )
 
     subparsers = ap.add_subparsers(
@@ -407,6 +556,10 @@ def parse_args():
         'hash': subparsers.add_parser(
             'hash',
             help='Display digest for current requirement set',
+        ),
+        'key': subparsers.add_parser(
+            'key',
+            help='Display remote key for current requirement set and platform',
         ),
         'exists': subparsers.add_parser(
             'exists',
@@ -438,6 +591,8 @@ def main():
 
     if args.command == 'hash':
         print terrarium.digest
+    if args.command == 'key':
+        print terrarium.make_remote_key()
     elif args.command == 'exists':
         sys.exit(0)
     elif args.command == 'install':

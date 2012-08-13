@@ -44,7 +44,7 @@ class TestTerrarium(unittest.TestCase):
 
     def _terrarium(self, command='', **kwargs):
         output, return_code = self._run(
-            './terrarium.py %s' % command
+            './terrarium/terrarium.py %s' % command
         )
         return output, return_code
 

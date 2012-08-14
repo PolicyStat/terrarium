@@ -385,7 +385,11 @@ def after_install(options, base):
 
     # Create a symlink for pythonM.N
     pyversion = (sys.version_info[0], sys.version_info[1])
-    os.symlink('python', join(bin_dir, 'python%%d.%%d' %% pyversion))
+    pyversion_path = join(bin_dir, 'python%%d.%%d' %% pyversion)
+    # If virtualenv is run using pythonM.N, that binary will already exist so
+    # there's no need to create it
+    if not os.path.exists(pyversion_path):
+        os.symlink('python', pyversion_path)
 
     # Activate the virtualenv
     activate_this = join(bin_dir, 'activate_this.py')

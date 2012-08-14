@@ -45,8 +45,17 @@ class TestTerrarium(unittest.TestCase):
         return output, return_code
 
     def _terrarium(self, command='', **kwargs):
+        terrarium = os.path.abspath(
+            os.path.join(
+                os.path.dirname(
+                    os.path.abspath(__file__)
+                ),
+                'terrarium',
+                'terrarium.py',
+            )
+        )
         output, return_code = self._run(
-            './terrarium/terrarium.py -vv %s' % command
+            '%s -vv %s' % (terrarium, command)
         )
         return output, return_code
 

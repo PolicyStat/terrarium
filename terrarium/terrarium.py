@@ -92,41 +92,45 @@ class Terrarium(object):
                 prefix='%s.' % os.path.basename(old_target),
                 dir=os.path.dirname(old_target),
             )
+            #logger.info('new_target %s', new_target)
 
         # Can the requested environment be downloaded?
+        downloaded = False
         if self.args.download:
-            if self.download(new_target):
-                return
+            downloaded = self.download(new_target)
 
-        # Create a self-contained script to create a virtual environment and
-        # install all of the requested requirements
-        logger.info('Building new environment')
-        fd, bootstrap = tempfile.mkstemp(
-            prefix='terrarium_bootstrap-',
-            suffix='.py',
-        )
-        self.create_bootstrap(bootstrap)
+        if not downloaded:
+            # Create a self-contained script to create a virtual environment
+            # and install all of the requested requirements
+            logger.info('Building new environment')
+            fd, bootstrap = tempfile.mkstemp(
+                prefix='terrarium_bootstrap-',
+                suffix='.py',
+            )
+            self.create_bootstrap(bootstrap)
 
-        # Run the bootstrap script which pip installs everything that has been
-        # defined as a requirement
-        call_subprocess([
-            sys.executable,
-            bootstrap,
-            '--prompt=(%s)' % prompt,
-            new_target
-        ])
+            # Run the bootstrap script which pip installs everything that has
+            # been defined as a requirement
+            call_subprocess([
+                sys.executable,
+                bootstrap,
+                '--prompt=(%s)' % prompt,
+                new_target
+            ])
 
-        # Do we want to copy the bootstrap into the environment for future use?
-        if self.args.bootstrap:
-            logger.info('Copying bootstrap script to new environment')
-            dest = os.path.join(new_target, 'bin', 'terrarium_bootstrap.py')
-            shutil.copyfile(bootstrap, dest)
-            os.chmod(dest, 0744)
-        os.close(fd)
-        os.unlink(bootstrap)
+            # Do we want to copy the bootstrap into the environment for future
+            # use?
+            if self.args.bootstrap:
+                logger.info('Copying bootstrap script to new environment')
+                dest = os.path.join(
+                    new_target, 'bin', 'terrarium_bootstrap.py')
+                shutil.copyfile(bootstrap, dest)
+                os.chmod(dest, 0744)
+            os.close(fd)
+            os.unlink(bootstrap)
 
-        if self.args.upload:
-            self.upload(new_target)
+            if self.args.upload:
+                self.upload(new_target)
 
         old_target_backup = '%s%s' % (old_target, self.args.backup_suffix)
         if old_target_exists:
@@ -227,7 +231,8 @@ class Terrarium(object):
             logger.error(
                 'Failed to extract archive, unknown or unsupported file type')
             return
-        os.mkdir(target)
+        if not os.path.exists(target):
+            os.mkdir(target)
         call_subprocess(['tar', tar_op, archive, '-C', target])
 
         bin_dir = os.path.join(target, 'bin')
@@ -600,11 +605,15 @@ def main():
     terrarium = Terrarium(args)
 
     if args.command == 'hash':
-        print terrarium.digest
+        sys.stdout.write('%s\n' % terrarium.digest)
     if args.command == 'key':
-        print terrarium.make_remote_key()
-    elif args.command == 'exists':
-        sys.exit(0)
+        key = terrarium.make_remote_key()
+        sys.stdout.write('%s\n' % key)
+    elif args.command == 'check':
+        if terrarium.is_clean():
+            sys.exit(0)
+        else:
+            sys.exit(1)
     elif args.command == 'install':
         terrarium.install()
 

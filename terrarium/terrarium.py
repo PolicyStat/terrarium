@@ -133,6 +133,13 @@ class Terrarium(object):
             logger.info('Moving old environment out of the way')
             os.rename(old_target, old_target_backup)
 
+            # Fix paths
+            Terrarium.replace_all_in_directory(
+                os.path.join(new_target, 'bin'),
+                new_target,
+                old_target,
+            )
+
         # move the new environment into the target's place
         os.rename(new_target, old_target)
 

@@ -26,7 +26,7 @@ class TestTerrarium(unittest.TestCase):
     def _run(self, command, **kwargs):
         defaults = {
             'stdout': subprocess.PIPE,
-            'stderr': subprocess.STDOUT,
+            'stderr': subprocess.PIPE,
         }
         defaults.update(kwargs)
         kwargs = defaults
@@ -45,9 +45,8 @@ class TestTerrarium(unittest.TestCase):
         return output, return_code
 
     def _terrarium(self, command='', **kwargs):
-        print command
         output, return_code = self._run(
-            './terrarium/terrarium.py %s' % command
+            './terrarium/terrarium.py -vv %s' % command
         )
         return output, return_code
 
@@ -77,6 +76,10 @@ class TestTerrarium(unittest.TestCase):
     def _add_requirements(self, *requirements):
         with open(self.requirements, 'w') as f:
             f.writelines('\n'.join(requirements))
+
+    def _clear_requirements(self, *requirements):
+        with open(self.requirements, 'w'):
+            pass
 
     def _can_import_requirements(self, *requirements):
         imported = []
@@ -171,14 +174,11 @@ class TestTerrarium(unittest.TestCase):
         output, return_code = self._install()
         self.assertEqual(return_code, 0)
         output, return_code = self._install()
-        print output[0]
         self.assertEqual(return_code, 0)
 
         activate = os.path.join(self.target, 'bin', 'activate')
         with open(activate) as f:
             contents = f.read()
-            print self.target
-            print contents
             self.assertTrue(
                 'VIRTUAL_ENV="%s"' % self.target
                 in contents
@@ -208,3 +208,45 @@ class TestTerrarium(unittest.TestCase):
 
         archive = os.path.join(self.storage_dir, requirements_key)
         self.assertFalse(os.path.exists(archive))
+
+    def test_install_storage_dir_archive_extracted(self):
+        # Verify that an archived terrarium can be later extracted and used
+
+        # Build an archive
+        self._add_requirements('decorator')
+        output, return_code = self._install(storage_dir=self.storage_dir)
+        self.assertEqual(return_code, 0)
+
+        requirements_key = self._key()
+
+        archive = os.path.join(self.storage_dir, requirements_key)
+        self.assertTrue(os.path.exists(archive))
+
+        # Just install a blank environment
+        self._clear_requirements()
+
+        # Replace the environment with something else
+        output, return_code = self._install(no_backup=True)
+        self.assertEqual(return_code, 0)
+
+        actual = self._can_import_requirements(
+            'decorator',  # Should not exist in the replacement
+        )
+        expected = []
+        self.assertEqual(actual, expected)
+
+        # Now attempt to install from the archive
+        self._add_requirements('decorator')
+        output, return_code = self._install(
+            no_backup=True,
+            storage_dir=self.storage_dir,
+        )
+        self.assertEqual(return_code, 0)
+        self.assertEqual(output[0], '')
+        self.assertTrue('Extracting terrarium bundle' in output[1])
+
+        actual = self._can_import_requirements(
+            'decorator',  # Should exist now
+        )
+        expected = ['decorator']
+        self.assertEqual(actual, expected)

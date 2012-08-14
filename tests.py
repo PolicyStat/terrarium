@@ -11,14 +11,16 @@ import platform
 
 class TestTerrarium(unittest.TestCase):
     def setUp(self):
-        self.target = tempfile.mkdtemp(prefix='test_terrarium')
-        self.storage = tempfile.mkdtemp(prefix='test_terrarium')
+        self.target = tempfile.mkdtemp(prefix='test_terrarium_target-')
+        self.storage_dir = tempfile.mkdtemp(prefix='test_terrarium_storage-')
         self.python = os.path.join(self.target, 'bin', 'python')
-        _, self.requirements = tempfile.mkstemp(prefix='test_terrarium')
+        _, self.requirements = tempfile.mkstemp(prefix='test_terrarium_req-')
 
     def tearDown(self):
         shutil.rmtree(self.target)
-        shutil.rmtree(self.storage)
+        if os.path.exists('%s.bak' % self.target):
+            shutil.rmtree('%s.bak' % self.target)
+        shutil.rmtree(self.storage_dir)
         os.unlink(self.requirements)
 
     def _run(self, command, **kwargs):
@@ -43,6 +45,7 @@ class TestTerrarium(unittest.TestCase):
         return output, return_code
 
     def _terrarium(self, command='', **kwargs):
+        print command
         output, return_code = self._run(
             './terrarium/terrarium.py %s' % command
         )
@@ -56,11 +59,20 @@ class TestTerrarium(unittest.TestCase):
         options = []
         for key, value in kwargs.items():
             options.append('--%s' % key.replace('_', '-'))
-            if value is not None:
+            if value is not None and value is not True:
                 options.append(value)
-        command = ' '.join(options) + command
+        command = '%s %s' % (' '.join(options), command)
         output, return_code = self._terrarium(command)
         return output, return_code
+
+    def _key(self, **kwargs):
+        command = 'key %s' % (
+            self.requirements,
+        )
+        output, return_code = self._terrarium(command)
+        self.assertEqual(return_code, 0)
+        requirements_key = output[0].strip()
+        return requirements_key
 
     def _add_requirements(self, *requirements):
         with open(self.requirements, 'w') as f:
@@ -85,6 +97,7 @@ class TestTerrarium(unittest.TestCase):
         self.assertEqual(return_code, 0)
 
     def test_install_empty_requirements(self):
+        # Check that we can install an empty requirements file
         self.assertTrue(not os.path.exists(self.python))
         output, return_code = self._install()
         self.assertEqual(return_code, 0)
@@ -109,9 +122,11 @@ class TestTerrarium(unittest.TestCase):
         ))
 
     def test_install_with_requirement(self):
+        # Verify that a requirement can be used after it is installed
         self._add_requirements('decorator')
         output, return_code = self._install()
         self.assertEqual(return_code, 0)
+        # Include a negative test as a control
         actual = self._can_import_requirements(
             'decorator',
             'asdasdasd',  # should not exist
@@ -120,6 +135,7 @@ class TestTerrarium(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_hash_default_empty_requirements(self):
+        # Verify that the hash of an empty requirements file is predictable
         command = 'hash %s' % (
             self.requirements,
         )
@@ -129,3 +145,66 @@ class TestTerrarium(unittest.TestCase):
             output[0].strip(),
             'd41d8cd98f00b204e9800998ecf8427e',
         )
+
+    def test_install_replace_backup_exists(self):
+        # Verify that a backup of the old environment is created when replacing
+        # it
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        self.assertTrue(os.path.exists('%s.bak' % self.target))
+
+    def test_install_replace_backup_removed(self):
+        # Verify that --no-backup deletes the backup when replacing an existing
+        # environment
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        output, return_code = self._install(no_backup=True)
+        self.assertEqual(return_code, 0)
+        self.assertFalse(os.path.exists('%s.bak' % self.target))
+
+    def test_install_replace_activate_virtualenv_path(self):
+        # Verify that when replacing an existing virtualenv, the VIRTUAL_ENV
+        # path in the activate script matches the original path of the
+        # replaced environment
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        output, return_code = self._install()
+        print output[0]
+        self.assertEqual(return_code, 0)
+
+        activate = os.path.join(self.target, 'bin', 'activate')
+        with open(activate) as f:
+            contents = f.read()
+            print self.target
+            print contents
+            self.assertTrue(
+                'VIRTUAL_ENV="%s"' % self.target
+                in contents
+            )
+
+    def test_install_storage_dir_archive(self):
+        # Verify that the --storage-dir option causes terrarium create an
+        # archive for the given requirement set
+        output, return_code = self._install(storage_dir=self.storage_dir)
+        self.assertEqual(return_code, 0)
+
+        requirements_key = self._key()
+
+        archive = os.path.join(self.storage_dir, requirements_key)
+        self.assertTrue(os.path.exists(archive))
+
+    def test_install_storage_dir_no_archive(self):
+        # Verify that the --no-upload option causes terrarium to not create an
+        # archive for the given requirement set
+        output, return_code = self._install(
+            storage_dir=self.storage_dir,
+            no_upload=True,
+        )
+        self.assertEqual(return_code, 0)
+
+        requirements_key = self._key()
+
+        archive = os.path.join(self.storage_dir, requirements_key)
+        self.assertFalse(os.path.exists(archive))

@@ -7,21 +7,72 @@ import tempfile
 import shutil
 import os
 import platform
+import copy
 
 
 class TestTerrarium(unittest.TestCase):
     def setUp(self):
-        self.target = tempfile.mkdtemp(prefix='test_terrarium_target-')
-        self.storage_dir = tempfile.mkdtemp(prefix='test_terrarium_storage-')
-        self.python = os.path.join(self.target, 'bin', 'python')
-        _, self.requirements = tempfile.mkstemp(prefix='test_terrarium_req-')
+        _, requirements = tempfile.mkstemp(prefix='test_terrarium_req-')
+        target = tempfile.mkdtemp(prefix='test_terrarium_target-')
+        self.initial_config = {
+            'target': target,
+            'storage_dir': tempfile.mkdtemp(prefix='test_terrarium_storage-'),
+            'python': os.path.join(target, 'bin', 'python'),
+            'terrarium': os.path.join(
+                self._get_path_terrarium(),
+                'terrarium',
+                'terrarium.py',
+            ),
+            'requirements': requirements,
+        }
+        self.configs = []
+        self.config_push(initial=True)
+
+    @property
+    def config(self):
+        return self.configs[0]
+
+    @property
+    def target(self):
+        return self.config['target']
+
+    @property
+    def storage_dir(self):
+        return self.config['storage_dir']
+
+    @property
+    def python(self):
+        return self.config['python']
+
+    @property
+    def terrarium(self):
+        return self.config['terrarium']
+
+    @property
+    def requirements(self):
+        return self.config['requirements']
+
+    def config_pop(self):
+        return self.configs.pop()
+
+    def config_push(self, initial=True):
+        if initial:
+            config = copy.deepcopy(self.initial_config)
+        else:
+            config = copy.deepcopy(self.configs[0])
+        self.configs.insert(0, config)
+        return config
 
     def tearDown(self):
-        shutil.rmtree(self.target)
-        if os.path.exists('%s.bak' % self.target):
-            shutil.rmtree('%s.bak' % self.target)
-        shutil.rmtree(self.storage_dir)
-        os.unlink(self.requirements)
+        for config in self.configs:
+            if os.path.exists(config['target']):
+                shutil.rmtree(config['target'])
+            if os.path.exists('%s.bak' % config['target']):
+                shutil.rmtree('%s.bak' % config['target'])
+            if os.path.exists(config['storage_dir']):
+                shutil.rmtree(config['storage_dir'])
+            if os.path.exists(config['requirements']):
+                os.unlink(config['requirements'])
 
     def _run(self, command, **kwargs):
         defaults = {
@@ -35,49 +86,6 @@ class TestTerrarium(unittest.TestCase):
         output = result.communicate()
         return output, result.returncode
 
-    def _python(self, command='', **kwargs):
-        output, return_code = self._run(
-            '%s %s' % (
-                self.python,
-                command,
-            )
-        )
-        return output, return_code
-
-    def _terrarium(self, command='', **kwargs):
-        terrarium = self._get_path(
-            '..',
-            'terrarium',
-            'terrarium.py',
-        )
-        output, return_code = self._run(
-            '%s -vv %s' % (terrarium, command)
-        )
-        return output, return_code
-
-    def _install(self, **kwargs):
-        command = '-t %s install %s' % (
-            self.target,
-            self.requirements,
-        )
-        options = []
-        for key, value in kwargs.items():
-            options.append('--%s' % key.replace('_', '-'))
-            if value is not None and value is not True:
-                options.append(value)
-        command = '%s %s' % (' '.join(options), command)
-        output, return_code = self._terrarium(command)
-        return output, return_code
-
-    def _key(self, **kwargs):
-        command = 'key %s' % (
-            self.requirements,
-        )
-        output, return_code = self._terrarium(command)
-        self.assertEqual(return_code, 0)
-        requirements_key = output[0].strip()
-        return requirements_key
-
     def _get_path(self, *paths):
         paths = list(paths)
         paths.insert(
@@ -90,9 +98,56 @@ class TestTerrarium(unittest.TestCase):
             os.path.join(*paths)
         )
 
+    def _get_path_terrarium(self):
+        return self._get_path('..')
+
+    def _python(self, command='', **kwargs):
+        output, return_code = self._run(
+            '%s %s' % (
+                self.python,
+                command,
+            )
+        )
+        return output, return_code
+
+    def _terrarium(self, command='', call_using_python=False):
+        command = '%s -vv %s' % (self.terrarium, command)
+        if call_using_python:
+            output, return_code = self._python(command)
+        else:
+            output, return_code = self._run(command)
+        return output, return_code
+
+    def _install(self, call_using_python=False, **kwargs):
+        command = '-t %s install %s' % (
+            self.target,
+            self.requirements,
+        )
+        options = []
+        for key, value in kwargs.items():
+            options.append('--%s' % key.replace('_', '-'))
+            if value is not None and value is not True:
+                options.append(value)
+        command = '%s %s' % (' '.join(options), command)
+        output, return_code = self._terrarium(
+            command,
+            call_using_python=call_using_python,
+        )
+        return output, return_code
+
+    def _key(self, **kwargs):
+        command = 'key %s' % (
+            self.requirements,
+        )
+        output, return_code = self._terrarium(command)
+        self.assertEqual(return_code, 0)
+        requirements_key = output[0].strip()
+        return requirements_key
+
     def _add_requirements(self, *requirements):
-        with open(self.requirements, 'w') as f:
+        with open(self.requirements, 'a') as f:
             f.writelines('\n'.join(requirements))
+            f.write('\n')
 
     def _add_test_requirement(self):
         test_requirement = self._get_path('fixtures', 'test_requirement')
@@ -122,7 +177,7 @@ class TestTerrarium(unittest.TestCase):
 
     def test_install_empty_requirements(self):
         # Check that we can install an empty requirements file
-        self.assertTrue(not os.path.exists(self.python))
+        self.assertFalse(os.path.exists(self.python))
         output, return_code = self._install()
         self.assertEqual(return_code, 0)
 
@@ -270,4 +325,49 @@ class TestTerrarium(unittest.TestCase):
             'test_requirement',  # Should exist now
         )
         expected = ['test_requirement']
+        self.assertEqual(actual, expected)
+
+    def test_install_with_terrarium_in_environment(self):
+        # Verify that terrarium can replace an existing environment, the one
+        # that terrarium executes from
+
+        self._add_test_requirement()
+        self._add_requirements(self._get_path_terrarium())
+
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+
+        actual = self._can_import_requirements(
+            'test_requirement',
+            'terrarium',
+        )
+        expected = [
+            'test_requirement',
+            'terrarium',
+        ]
+        self.assertEqual(actual, expected)
+
+        # Use terrarium contained in the new environment
+        config = self.config_push()
+        config['terrarium'] = os.path.join(
+            self.target,
+            'bin',
+            'terrarium',
+        )
+
+        output, return_code = self._install(
+            no_backup=True,
+            call_using_python=True,
+        )
+        self.assertEqual(return_code, 0)
+        self.assertFalse('Requirement already satisfied' in output[0])
+
+        actual = self._can_import_requirements(
+            'test_requirement',
+            'terrarium',
+        )
+        expected = [
+            'test_requirement',
+            'terrarium',
+        ]
         self.assertEqual(actual, expected)

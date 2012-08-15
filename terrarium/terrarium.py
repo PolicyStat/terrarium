@@ -411,6 +411,7 @@ def after_install(options, base):
     reqs = shlex.split(' '.join(REQUIREMENTS))
     options, args = c.parser.parse_args(reqs)
     options.require_venv = True
+    options.ignore_installed = True
     requirementSet = c.run(options, args)
 
     make_environment_relocatable(base)

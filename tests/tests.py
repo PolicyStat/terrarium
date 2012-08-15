@@ -45,14 +45,10 @@ class TestTerrarium(unittest.TestCase):
         return output, return_code
 
     def _terrarium(self, command='', **kwargs):
-        terrarium = os.path.abspath(
-            os.path.join(
-                os.path.dirname(
-                    os.path.abspath(__file__)
-                ),
-                'terrarium',
-                'terrarium.py',
-            )
+        terrarium = self._get_path(
+            '..',
+            'terrarium',
+            'terrarium.py',
         )
         output, return_code = self._run(
             '%s -vv %s' % (terrarium, command)
@@ -82,9 +78,25 @@ class TestTerrarium(unittest.TestCase):
         requirements_key = output[0].strip()
         return requirements_key
 
+    def _get_path(self, *paths):
+        paths = list(paths)
+        paths.insert(
+            0,
+            os.path.dirname(
+                os.path.abspath(__file__)
+            ),
+        )
+        return os.path.abspath(
+            os.path.join(*paths)
+        )
+
     def _add_requirements(self, *requirements):
         with open(self.requirements, 'w') as f:
             f.writelines('\n'.join(requirements))
+
+    def _add_test_requirement(self):
+        test_requirement = self._get_path('fixtures', 'test_requirement')
+        self._add_requirements(test_requirement)
 
     def _clear_requirements(self, *requirements):
         with open(self.requirements, 'w'):
@@ -135,15 +147,15 @@ class TestTerrarium(unittest.TestCase):
 
     def test_install_with_requirement(self):
         # Verify that a requirement can be used after it is installed
-        self._add_requirements('decorator')
+        self._add_test_requirement()
         output, return_code = self._install()
         self.assertEqual(return_code, 0)
         # Include a negative test as a control
         actual = self._can_import_requirements(
-            'decorator',
+            'test_requirement',
             'asdasdasd',  # should not exist
         )
-        expected = ['decorator']
+        expected = ['test_requirement']
         self.assertEqual(actual, expected)
 
     def test_hash_default_empty_requirements(self):
@@ -222,7 +234,7 @@ class TestTerrarium(unittest.TestCase):
         # Verify that an archived terrarium can be later extracted and used
 
         # Build an archive
-        self._add_requirements('decorator')
+        self._add_test_requirement()
         output, return_code = self._install(storage_dir=self.storage_dir)
         self.assertEqual(return_code, 0)
 
@@ -239,13 +251,13 @@ class TestTerrarium(unittest.TestCase):
         self.assertEqual(return_code, 0)
 
         actual = self._can_import_requirements(
-            'decorator',  # Should not exist in the replacement
+            'test_requirement',  # Should not exist in the replacement
         )
         expected = []
         self.assertEqual(actual, expected)
 
         # Now attempt to install from the archive
-        self._add_requirements('decorator')
+        self._add_test_requirement()
         output, return_code = self._install(
             no_backup=True,
             storage_dir=self.storage_dir,
@@ -255,7 +267,7 @@ class TestTerrarium(unittest.TestCase):
         self.assertTrue('Extracting terrarium bundle' in output[1])
 
         actual = self._can_import_requirements(
-            'decorator',  # Should exist now
+            'test_requirement',  # Should exist now
         )
-        expected = ['decorator']
+        expected = ['test_requirement']
         self.assertEqual(actual, expected)

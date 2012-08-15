@@ -381,6 +381,7 @@ def after_install(options, base):
 
     # Update prefix and executable to point to the virtualenv
     sys.prefix = os.path.abspath(base)
+    sys.exec_prefix = sys.prefix
     sys.executable = join(os.path.abspath(bin_dir), 'python')
 
     # Create a symlink for pythonM.N

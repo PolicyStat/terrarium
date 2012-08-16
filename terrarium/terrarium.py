@@ -361,7 +361,10 @@ class Terrarium(object):
     def create_bootstrap(self, dest):
         extra_text = (
             TERRARIUM_BOOTSTRAP_EXTRA_TEXT %
-                {'REQUIREMENTS': self.requirements}
+                {
+                    'REQUIREMENTS': self.requirements,
+                    'LOGGING': logger.level,
+                }
         )
         output = create_bootstrap_script(extra_text)
         with open(dest, 'w') as f:
@@ -377,7 +380,7 @@ REQUIREMENTS = %(REQUIREMENTS)s
 
 def after_install(options, base):
     # Debug logging for virtualenv
-    logger.consumers = [(logger.DEBUG, sys.stdout)]
+    logger.consumers = [(%(LOGGING)d, sys.stdout)]
 
     home_dir, lib_dir, inc_dir, bin_dir = path_locations(base)
 
@@ -403,7 +406,7 @@ def after_install(options, base):
     import shlex
 
     # Debug logging for pip
-    pip.logger.consumers = [(pip.logger.DEBUG, sys.stdout)]
+    pip.logger.consumers = [(%(LOGGING)d, sys.stdout)]
 
     # Load version control modules for installing 'editables'
     pip.version_control()

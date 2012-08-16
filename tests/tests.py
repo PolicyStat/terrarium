@@ -243,6 +243,20 @@ class TestTerrarium(unittest.TestCase):
         self.assertEqual(return_code, 0)
         self.assertFalse(os.path.exists('%s.bak' % self.target))
 
+    def test_install_replace_old_backup_removed(self):
+        # After doing two installs, we have test and test.bak. On a third
+        # install, test.bak already exists, so renaming test to test.bak will
+        # fail. Verify that the original test.bak is deleted, only the
+        # most-recent backup is preserved
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        self.assertTrue(os.path.exists('%s.bak' % self.target))
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        self.assertTrue(os.path.exists('%s.bak' % self.target))
+
     def test_install_replace_activate_virtualenv_path(self):
         # Verify that when replacing an existing virtualenv, the VIRTUAL_ENV
         # path in the activate script matches the original path of the

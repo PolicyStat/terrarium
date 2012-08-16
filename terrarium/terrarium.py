@@ -135,6 +135,8 @@ class Terrarium(object):
         old_target_backup = '%s%s' % (old_target, self.args.backup_suffix)
         if old_target_exists:
             logger.info('Moving old environment out of the way')
+            if os.path.exists(old_target_backup):
+                shutil.rmtree(old_target_backup)
             os.rename(old_target, old_target_backup)
 
             # Fix paths

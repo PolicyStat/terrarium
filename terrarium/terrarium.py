@@ -616,9 +616,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-    if args.version:
-        sys.stdout.write('%s\n' % VERSION)
-        sys.exit(0)
 
     logger.setLevel(sum(args.v))
     logger.addHandler(StreamHandler())

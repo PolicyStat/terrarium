@@ -1,6 +1,8 @@
 import os
 from setuptools import setup
 
+version = '0.1.0dev'
+
 classifiers = [
     'Development Status :: 4 - Beta',
     'Environment :: Console',
@@ -32,7 +34,7 @@ def get_requirements():
 
 setup_options = dict(
     name='terrarium',
-    version='0.1.0dev',
+    version=version,
     author='Kyle Gibson',
     author_email='kyle.gibson@frozenonline.com',
     description='Package and ship relocatable python virtualenvs',

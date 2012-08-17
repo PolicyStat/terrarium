@@ -10,6 +10,8 @@ import shutil
 
 from logging import getLogger, StreamHandler, WARN
 
+VERSION = '0.1.0dev'
+
 try:
     import boto  # noqa
 except ImportError:
@@ -426,6 +428,11 @@ def after_install(options, base):
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument(
+        '-V', '--version',
+        action='version',
+        version='%(prog)s ' + VERSION,
+    )
+    ap.add_argument(
         '-v', '--verbose',
         action='append_const',
         const=-10,
@@ -609,6 +616,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.version:
+        sys.stdout.write('%s\n' % VERSION)
+        sys.exit(0)
 
     logger.setLevel(sum(args.v))
     logger.addHandler(StreamHandler())

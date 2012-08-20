@@ -15,6 +15,8 @@ VERSION = '0.1.1dev'
 
 try:
     import boto  # noqa
+    import boto.s3.connection
+    import boto.exception
 except ImportError:
     boto = None  # noqa
 
@@ -252,7 +254,7 @@ class Terrarium(object):
     def _get_s3_bucket(self):
         if not boto:
             return None
-        conn = boto.S3Connection(
+        conn = boto.s3.connection.S3Connection(
             aws_access_key_id=self.args.s3_access_key,
             aws_secret_access_key=self.args.s3_secret_key
         )
@@ -261,9 +263,9 @@ class Terrarium(object):
                 self.args.s3_bucket,
                 policy='public-read',
             )
-        except boto.S3CreateError:
+        except boto.exception.S3CreateError:
             pass
-        return boto.Bucket(conn, name=self.args.s3_bucket)
+        return boto.s3.bucket.Bucket(conn, name=self.args.s3_bucket)
 
     def download(self, target):
         if self.args.storage_dir:

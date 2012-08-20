@@ -285,6 +285,15 @@ class TestTerrarium(unittest.TestCase):
         archive = os.path.join(self.storage_dir, requirements_key)
         self.assertTrue(os.path.exists(archive))
 
+        # Verify that the environment is returned to a usable state
+        activate = os.path.join(self.target, 'bin', 'activate')
+        with open(activate) as f:
+            contents = f.read()
+            self.assertTrue(
+                'VIRTUAL_ENV="%s"' % self.target
+                in contents
+            )
+
     def test_install_storage_dir_no_archive(self):
         # Verify that the --no-upload option causes terrarium to not create an
         # archive for the given requirement set

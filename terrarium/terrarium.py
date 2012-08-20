@@ -215,7 +215,7 @@ class Terrarium(object):
         if self.args.compress:
             # Compress the tarball
             call_subprocess(['gzip', archive])
-            return '%s.gz' % archive
+            archive = '%s.gz' % archive
 
         Terrarium.make_bin_dir_paths_absolute(bin_dir, target)
         return archive

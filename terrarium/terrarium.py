@@ -11,7 +11,7 @@ import shutil
 from logging import getLogger, StreamHandler, WARN
 
 # Update here and in setup.py
-VERSION = '0.1.2dev'
+VERSION = '1.0.0rc1'
 
 try:
     import boto  # noqa

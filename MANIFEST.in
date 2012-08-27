@@ -1,0 +1,10 @@
+include AUTHORS
+include LICENSE
+include README.md
+include requirements.txt
+recursive-include docs *
+recursive-include tests *
+recursive-include terrarium *
+prune tests/*.pyc
+prune docs/*.pyc
+prune terrarium/*.pyc

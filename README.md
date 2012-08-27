@@ -86,3 +86,11 @@ options will only be available if `boto` is installed.
 
 Each of these options can be specified using environment variables, e.g.
 `S3_BUCKET` instead of being passed in as a parameter.
+
+## Python/Platform Support
+
+Currently, python 2.5, 2.6 and 2.7 on Linux are supported and tested.
+Python 3 support is 
+[planned](https://github.com/PolicyStat/terrarium/issues/8) and
+Windows support is an option if folks require it (pull requests and
+bug reports welcome).

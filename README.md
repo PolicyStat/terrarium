@@ -22,7 +22,7 @@ slow or inconsistent.
 
 Install using pip:
 
-    pip install -e git+git://github.com/PolicyStat/terrarium#egg=terrarium
+    pip install terrarium
 
 ## Basic Usage
 

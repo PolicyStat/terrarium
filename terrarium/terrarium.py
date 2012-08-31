@@ -246,7 +246,17 @@ class Terrarium(object):
 
         # Restore python binary
         path_to_python = sys.executable
-        call_subprocess(['cp', path_to_python, bin_dir])
+        dest = python_binary = os.path.basename(path_to_python)
+
+        if python_binary.startswith('python') and python_binary != 'python':
+            dest = 'python'
+        dest = os.path.join(bin_dir, dest)
+        if not os.path.exists(dest):
+            call_subprocess([
+                'cp',
+                path_to_python,
+                dest,
+            ])
 
         # Fix up paths
         Terrarium.make_bin_dir_paths_absolute(bin_dir, target)

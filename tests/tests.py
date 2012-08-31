@@ -260,6 +260,15 @@ class TestTerrarium(unittest.TestCase):
         self.assertEqual(return_code, 0)
         self.assertTrue(os.path.exists('%s.bak' % self.target))
 
+    def test_install_old_backup_symlink(self):
+        # Create a scenario where the backup (from a previous install) is
+        # actually a symlink instead of a directory
+        os.symlink(self.target, '%s.bak' % self.target)
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+
     def test_install_replace_activate_virtualenv_path(self):
         # Verify that when replacing an existing virtualenv, the VIRTUAL_ENV
         # path in the activate script matches the original path of the

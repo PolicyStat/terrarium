@@ -37,6 +37,15 @@ MAGIC_NUM = {
 }
 
 
+def rmtree(path):
+    if os.path.islink(path):
+        return os.unlink(path)
+    elif os.path.isdir(path):
+        return shutil.rmtree(path)
+    else:
+        return os.unlink(path)
+
+
 # Helper method to determine the actual type of the file without relying on the
 # file extension
 def get_type(path):
@@ -141,7 +150,7 @@ class Terrarium(object):
         if old_target_exists:
             logger.info('Moving old environment out of the way')
             if os.path.exists(old_target_backup):
-                shutil.rmtree(old_target_backup)
+                rmtree(old_target_backup)
             os.rename(old_target, old_target_backup)
 
             # Fix paths
@@ -157,7 +166,7 @@ class Terrarium(object):
         # Do we keep a backup of the old environment around or wipe it?
         if os.path.isdir(old_target_backup) and not self.args.backup:
             logger.info('Deleting old environment')
-            shutil.rmtree(old_target_backup)
+            rmtree(old_target_backup)
 
     @staticmethod
     def replace_all_in_directory(location, old,

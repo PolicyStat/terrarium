@@ -153,6 +153,9 @@ class TestTerrarium(unittest.TestCase):
         test_requirement = self._get_path('fixtures', 'test_requirement')
         self._add_requirements(test_requirement)
 
+    def _add_terrarium_requirement(self):
+        self._add_requirements(self._get_path_terrarium())
+
     def _clear_requirements(self, *requirements):
         with open(self.requirements, 'w'):
             pass
@@ -355,7 +358,7 @@ class TestTerrarium(unittest.TestCase):
         # that terrarium executes from
 
         self._add_test_requirement()
-        self._add_requirements(self._get_path_terrarium())
+        self._add_terrarium_requirement()
 
         output, return_code = self._install()
         self.assertEqual(return_code, 0)
@@ -394,3 +397,29 @@ class TestTerrarium(unittest.TestCase):
             'terrarium',
         ]
         self.assertEqual(actual, expected)
+
+    def test_extract_with_terrarium_in_environment(self):
+        # Verify that terrarium can install after being extracted from an
+        # archive that was previously installed
+
+        self._add_terrarium_requirement()
+
+        output, return_code = self._install(
+            storage_dir=self.storage_dir,
+        )
+        self.assertEqual(return_code, 0)
+
+        # Use terrarium contained in the new environment
+        config = self.config_push()
+        config['terrarium'] = os.path.join(
+            self.target,
+            'bin',
+            'terrarium',
+        )
+
+        output, return_code = self._install(
+            no_backup=True,
+            storage_dir=self.storage_dir,
+        )
+        self.assertEqual(return_code, 0)
+        self.assertTrue(os.path.exists(self.python))

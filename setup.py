@@ -2,7 +2,7 @@ import os
 from setuptools import setup
 
 # Update here and in terrarium.py
-version = '1.0.0rc1'
+version = '1.0.0rc2'
 
 classifiers = [
     'Development Status :: 4 - Beta',

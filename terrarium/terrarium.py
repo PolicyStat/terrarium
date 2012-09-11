@@ -535,7 +535,7 @@ def parse_args():
     )
     ap.add_argument(
         '--storage-dir',
-        default=None,
+        default=os.environ.get('TERRARIUM_STORAGE_DIR', None),
         help='''
             Path to a directory in which terrarium bundles will be retrieved
             and stored for speedy re-installation. This will usually be a

@@ -24,6 +24,7 @@ class TestTerrarium(unittest.TestCase):
                 'terrarium.py',
             ),
             'requirements': requirements,
+            'environ': {},
         }
         self.configs = []
         self.config_push(initial=True)
@@ -47,6 +48,10 @@ class TestTerrarium(unittest.TestCase):
     @property
     def terrarium(self):
         return self.config['terrarium']
+
+    @property
+    def environ(self):
+        return self.config['environ']
 
     @property
     def requirements(self):
@@ -80,6 +85,11 @@ class TestTerrarium(unittest.TestCase):
             'stderr': subprocess.PIPE,
         }
         defaults.update(kwargs)
+        env = {}
+        if self.environ:
+            env.update(os.environ)
+            env.update(self.environ)
+            defaults['env'] = env
         kwargs = defaults
         params = shlex.split(command)
         result = subprocess.Popen(params, **kwargs)
@@ -115,7 +125,9 @@ class TestTerrarium(unittest.TestCase):
         if call_using_python:
             output, return_code = self._python(command)
         else:
-            output, return_code = self._run(command)
+            output, return_code = self._run(
+                command,
+            )
         return output, return_code
 
     def _install(self, call_using_python=False, **kwargs):
@@ -290,6 +302,28 @@ class TestTerrarium(unittest.TestCase):
         # Verify that the --storage-dir option causes terrarium create an
         # archive for the given requirement set
         output, return_code = self._install(storage_dir=self.storage_dir)
+        self.assertEqual(return_code, 0)
+
+        requirements_key = self._key()
+
+        archive = os.path.join(self.storage_dir, requirements_key)
+        self.assertTrue(os.path.exists(archive))
+
+        # Verify that the environment is returned to a usable state
+        activate = os.path.join(self.target, 'bin', 'activate')
+        with open(activate) as f:
+            contents = f.read()
+            self.assertTrue(
+                'VIRTUAL_ENV="%s"' % self.target
+                in contents
+            )
+
+    def test_install_storage_dir_archive_by_environ(self):
+        # Verify that the --storage-dir option causes terrarium create an
+        # archive for the given requirement set
+        self.environ['TERRARIUM_STORAGE_DIR'] = self.storage_dir
+
+        output, return_code = self._install()
         self.assertEqual(return_code, 0)
 
         requirements_key = self._key()

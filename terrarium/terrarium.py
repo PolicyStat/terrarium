@@ -7,11 +7,12 @@ import os
 import sys
 import tempfile
 import shutil
+import logging
 
-from logging import getLogger, StreamHandler, WARN
+from logging import getLogger, StreamHandler
 
 # Update here and in setup.py
-VERSION = '1.0.0rc2'
+VERSION = '1.0.0rc3-dev'
 
 try:
     import boto  # noqa
@@ -106,7 +107,6 @@ class Terrarium(object):
                 prefix='%s.' % os.path.basename(old_target),
                 dir=os.path.dirname(old_target),
             )
-            #logger.info('new_target %s', new_target)
 
         # Can the requested environment be downloaded?
         downloaded = False
@@ -294,7 +294,7 @@ class Terrarium(object):
             )
             if os.path.exists(remote_archive):
                 logger.info(
-                    'Copying environment from %s'
+                    'Copying environment from %s (this may take time) ...'
                     % self.args.storage_dir,
                 )
                 local_archive = '%s.tar.gz' % target
@@ -311,7 +311,10 @@ class Terrarium(object):
             if bucket:
                 key = bucket.get_key(self.make_remote_key())
                 if key:
-                    logger.info('Downloading environment from S3')
+                    logger.info(
+                        'Downloading environment from S3 '
+                        '(this may take time) ...'
+                    )
                     fd, archive = tempfile.mkstemp()
                     key.get_contents_to_filename(archive)
                     self.extract(archive, target)
@@ -387,7 +390,8 @@ class Terrarium(object):
             TERRARIUM_BOOTSTRAP_EXTRA_TEXT %
                 {
                     'REQUIREMENTS': self.requirements,
-                    'LOGGING': logger.level,
+                    'VENV_LOGGING': self.args.virtualenv_log_level,
+                    'PIP_LOGGING': self.args.pip_log_level,
                 }
         )
         output = create_bootstrap_script(extra_text)
@@ -404,7 +408,7 @@ REQUIREMENTS = %(REQUIREMENTS)s
 
 def after_install(options, base):
     # Debug logging for virtualenv
-    logger.consumers = [(%(LOGGING)d, sys.stdout)]
+    logger.consumers = [(%(VENV_LOGGING)s, sys.stdout)]
 
     home_dir, lib_dir, inc_dir, bin_dir = path_locations(base)
 
@@ -430,7 +434,7 @@ def after_install(options, base):
     import shlex
 
     # Debug logging for pip
-    pip.logger.consumers = [(%(LOGGING)d, sys.stdout)]
+    pip.logger.consumers = [(%(PIP_LOGGING)s, sys.stdout)]
 
     # Load version control modules for installing 'editables'
     pip.version_control()
@@ -458,7 +462,7 @@ def parse_args():
         '-v', '--verbose',
         action='append_const',
         const=-10,
-        default=[WARN],
+        default=[logging.INFO],
         dest='v',
         help='Increase verbosity',
     )
@@ -466,7 +470,7 @@ def parse_args():
         '-q', '--quiet',
         action='append_const',
         const=10,
-        default=[WARN],
+        default=[logging.INFO],
         dest='v',
         help='Decrease verbosity',
     )
@@ -478,6 +482,20 @@ def parse_args():
             Replace or build new environment at this location. If you are
             already within a virtual environment, this option defaults to
             VIRTUAL_ENV.
+        ''',
+    )
+    ap.add_argument(
+        '--pip-log-level',
+        default=25,
+        help='''
+        Set the log level for pip
+        ''',
+    )
+    ap.add_argument(
+        '--virtualenv-log-level',
+        default=25,
+        help='''
+        Set the log level for virtualenv
         ''',
     )
     ap.add_argument(
@@ -639,7 +657,8 @@ def parse_args():
 def main():
     args = parse_args()
 
-    logger.setLevel(sum(args.v))
+    log_level = max(logging.DEBUG, sum(args.v))
+    logger.setLevel(log_level)
     logger.addHandler(StreamHandler())
 
     terrarium = Terrarium(args)

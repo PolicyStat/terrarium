@@ -25,6 +25,7 @@ class TerrariumTester(unittest.TestCase):
             ),
             'requirements': requirements,
             'environ': {},
+            'opts': '',
         }
         self.configs = []
         self.config_push(initial=True)
@@ -56,6 +57,10 @@ class TerrariumTester(unittest.TestCase):
     @property
     def requirements(self):
         return self.config['requirements']
+
+    @property
+    def opts(self):
+        return self.config['opts']
 
     def config_pop(self):
         return self.configs.pop()
@@ -121,7 +126,7 @@ class TerrariumTester(unittest.TestCase):
         return output, return_code
 
     def _terrarium(self, command='', call_using_python=False):
-        command = '%s -vv %s' % (self.terrarium, command)
+        command = '%s %s %s' % (self.terrarium, self.opts, command)
         if call_using_python:
             output, return_code = self._python(command)
         else:
@@ -468,3 +473,19 @@ class TestTerrarium(TerrariumTester):
         )
         self.assertEqual(return_code, 0)
         self.assertTrue(os.path.exists(self.python))
+
+    def test_logging_output(self):
+        self._add_test_requirement()
+        self._add_terrarium_requirement()
+
+        config = self.config_push()
+        config['opts'] = ''
+
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+
+        self.assertEqual(67, len(output[0].split('\n')))
+        self.assertEqual(output[1], (
+            'Building new environment\n'
+            'Copying bootstrap script to new environment\n'
+        ))

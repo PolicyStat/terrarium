@@ -10,7 +10,7 @@ import platform
 import copy
 
 
-class TestTerrarium(unittest.TestCase):
+class TerrariumTester(unittest.TestCase):
     def setUp(self):
         _, requirements = tempfile.mkstemp(prefix='test_terrarium_req-')
         target = tempfile.mkdtemp(prefix='test_terrarium_target-')
@@ -182,6 +182,8 @@ class TestTerrarium(unittest.TestCase):
                 imported.append(r)
         return imported
 
+
+class TestTerrarium(TerrariumTester):
     def test_no_params(self):
         output, return_code = self._terrarium()
         self.assertEqual(return_code, 2)

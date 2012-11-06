@@ -309,11 +309,13 @@ class Terrarium(object):
         if boto and self.args.s3_bucket:
             bucket = self._get_s3_bucket()
             if bucket:
-                key = bucket.get_key(self.make_remote_key())
+                remote_key = self.make_remote_key()
+                key = bucket.get_key(remote_key)
                 if key:
                     logger.info(
-                        'Downloading environment from S3 '
+                        'Downloading %s/%s from S3 '
                         '(this may take time) ...'
+                        % (self.args.s3_bucket, remote_key)
                     )
                     fd, archive = tempfile.mkstemp()
                     key.get_contents_to_filename(archive)

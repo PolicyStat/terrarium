@@ -39,12 +39,21 @@ MAGIC_NUM = {
 
 
 def rmtree(path):
-    if os.path.islink(path):
-        return os.unlink(path)
-    elif os.path.isdir(path):
-        return shutil.rmtree(path)
-    else:
-        return os.unlink(path)
+    try:
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.unlink(path)
+        return True
+    except OSError, why:
+        logger.warn(
+            'Failed to remove %s. '
+            'Make sure you have permissions to this path. '
+            '%s' % (path, why)
+        )
+        return False
 
 
 # Helper method to determine the actual type of the file without relying on the

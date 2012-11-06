@@ -198,6 +198,7 @@ class Terrarium(object):
         if os.path.isdir(old_target_backup) and not self.args.backup:
             logger.info('Deleting old environment')
             rmtree(old_target_backup)
+        logger.info('Terrarium is finished')
         return 0
 
     @staticmethod

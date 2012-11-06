@@ -39,12 +39,21 @@ MAGIC_NUM = {
 
 
 def rmtree(path):
-    if os.path.islink(path):
-        return os.unlink(path)
-    elif os.path.isdir(path):
-        return shutil.rmtree(path)
-    else:
-        return os.unlink(path)
+    try:
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.unlink(path)
+        return True
+    except OSError, why:
+        logger.warn(
+            'Failed to remove %s. '
+            'Make sure you have permissions to this path. '
+            '%s' % (path, why)
+        )
+        return False
 
 
 # Helper method to determine the actual type of the file without relying on the
@@ -150,8 +159,22 @@ class Terrarium(object):
         if old_target_exists:
             logger.info('Moving old environment out of the way')
             if os.path.exists(old_target_backup):
-                rmtree(old_target_backup)
-            os.rename(old_target, old_target_backup)
+                if not rmtree(old_target_backup):
+                    old_target_backup = tempfile.mkdtemp(
+                        prefix='terrarium_old_backup_target-'
+                    )
+                    old_target_backup = os.path.join(old_target_backup, prompt)
+                    logger.info(
+                        'Backing environment up to %s' % old_target_backup)
+            try:
+                os.rename(old_target, old_target_backup)
+            except OSError, why:
+                logger.error(
+                    'Failed to move environment out of the way. '
+                    'Check that you have the correct permissions. '
+                    '%s' % why
+                )
+                return 1
 
             # Fix paths
             Terrarium.replace_all_in_directory(
@@ -160,13 +183,23 @@ class Terrarium(object):
                 old_target,
             )
 
-        # move the new environment into the target's place
-        os.rename(new_target, old_target)
+        try:
+            # move the new environment into the target's place
+            os.rename(new_target, old_target)
+        except OSError, why:
+            logger.error(
+                'Failed to move the new environment into the correct path. '
+                'Check that you have the correct permissions. '
+                '%s' % why
+            )
+            return 1
 
         # Do we keep a backup of the old environment around or wipe it?
         if os.path.isdir(old_target_backup) and not self.args.backup:
             logger.info('Deleting old environment')
             rmtree(old_target_backup)
+        logger.info('Terrarium is finished')
+        return 0
 
     @staticmethod
     def replace_all_in_directory(location, old,
@@ -309,11 +342,13 @@ class Terrarium(object):
         if boto and self.args.s3_bucket:
             bucket = self._get_s3_bucket()
             if bucket:
-                key = bucket.get_key(self.make_remote_key())
+                remote_key = self.make_remote_key()
+                key = bucket.get_key(remote_key)
                 if key:
                     logger.info(
-                        'Downloading environment from S3 '
+                        'Downloading %s/%s from S3 '
                         '(this may take time) ...'
+                        % (self.args.s3_bucket, remote_key)
                     )
                     fd, archive = tempfile.mkstemp()
                     key.get_contents_to_filename(archive)
@@ -674,7 +709,8 @@ def main():
         else:
             sys.exit(1)
     elif args.command == 'install':
-        terrarium.install()
+        r = terrarium.install()
+        sys.exit(r)
 
 if __name__ == '__main__':
     main()

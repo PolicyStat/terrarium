@@ -488,4 +488,5 @@ class TestTerrarium(TerrariumTester):
         self.assertEqual(output[1], (
             'Building new environment\n'
             'Copying bootstrap script to new environment\n'
+            'Terrarium is finished\n'
         ))

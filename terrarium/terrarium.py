@@ -167,6 +167,7 @@ class Terrarium(object):
         if os.path.isdir(old_target_backup) and not self.args.backup:
             logger.info('Deleting old environment')
             rmtree(old_target_backup)
+        return 0
 
     @staticmethod
     def replace_all_in_directory(location, old,
@@ -676,7 +677,8 @@ def main():
         else:
             sys.exit(1)
     elif args.command == 'install':
-        terrarium.install()
+        r = terrarium.install()
+        sys.exit(r)
 
 if __name__ == '__main__':
     main()

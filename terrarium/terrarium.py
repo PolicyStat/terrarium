@@ -169,8 +169,16 @@ class Terrarium(object):
                 old_target,
             )
 
-        # move the new environment into the target's place
-        os.rename(new_target, old_target)
+        try:
+            # move the new environment into the target's place
+            os.rename(new_target, old_target)
+        except OSError, why:
+            logger.error(
+                'Failed to move the new environment into the correct path. '
+                'Check that you have the correct permissions. '
+                '%s' % why
+            )
+            return 1
 
         # Do we keep a backup of the old environment around or wipe it?
         if os.path.isdir(old_target_backup) and not self.args.backup:

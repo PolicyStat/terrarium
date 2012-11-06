@@ -159,8 +159,22 @@ class Terrarium(object):
         if old_target_exists:
             logger.info('Moving old environment out of the way')
             if os.path.exists(old_target_backup):
-                rmtree(old_target_backup)
-            os.rename(old_target, old_target_backup)
+                if not rmtree(old_target_backup):
+                    old_target_backup = tempfile.mkdtemp(
+                        prefix='terrarium_old_backup_target-'
+                    )
+                    old_target_backup = os.path.join(old_target_backup, prompt)
+                    logger.info(
+                        'Backing environment up to %s' % old_target_backup)
+            try:
+                os.rename(old_target, old_target_backup)
+            except OSError, why:
+                logger.error(
+                    'Failed to move environment out of the way. '
+                    'Check that you have the correct permissions. '
+                    '%s' % why
+                )
+                return 1
 
             # Fix paths
             Terrarium.replace_all_in_directory(

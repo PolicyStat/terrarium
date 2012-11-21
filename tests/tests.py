@@ -490,3 +490,16 @@ class TestTerrarium(TerrariumTester):
             'Copying bootstrap script to new environment\n'
             'Terrarium is finished\n'
         ))
+
+    def test_boto_required_to_use_s3_bucket(self):
+        self._add_test_requirement()
+
+        output, return_code = self._install(
+                s3_bucket='bucket',
+        )
+        self.assertEqual(return_code, 2)
+        self.assertTrue(
+            'error: --s3-bucket requires that you have boto installed, '
+            'which does not appear to be the case'
+            in output[1]
+        )

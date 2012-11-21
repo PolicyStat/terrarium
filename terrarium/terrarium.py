@@ -625,36 +625,35 @@ def parse_args():
         ''' % default_remote_key_format.replace('%', '%%'),
     )
 
-    if boto:
-        ap.add_argument(
-            '--s3-bucket',
-            default=os.environ.get('S3_BUCKET', None),
-            help='''
-                S3 bucket name. Defaults to S3_BUCKET env variable.
-            '''
-        )
-        ap.add_argument(
-            '--s3-access-key',
-            default=os.environ.get('S3_ACCESS_KEY', None),
-            help='''
-                Defaults to S3_ACCESS_KEY env variable.
-            '''
-        )
-        ap.add_argument(
-            '--s3-secret-key',
-            default=os.environ.get('S3_SECRET_KEY', None),
-            help='''
-                Defaults to S3_SECRET_KEY env variable.
-            '''
-        )
-        ap.add_argument(
-            '--s3-max-retries',
-            default=os.environ.get('S3_MAX_RETRIES', 3),
-            help='''
-                Number of times to attempt a S3 operation before giving up.
-                Default is 3.
-            ''',
-        )
+    ap.add_argument(
+        '--s3-bucket',
+        default=os.environ.get('S3_BUCKET', None),
+        help='''
+            S3 bucket name. Defaults to S3_BUCKET env variable.
+        '''
+    )
+    ap.add_argument(
+        '--s3-access-key',
+        default=os.environ.get('S3_ACCESS_KEY', None),
+        help='''
+            Defaults to S3_ACCESS_KEY env variable.
+        '''
+    )
+    ap.add_argument(
+        '--s3-secret-key',
+        default=os.environ.get('S3_SECRET_KEY', None),
+        help='''
+            Defaults to S3_SECRET_KEY env variable.
+        '''
+    )
+    ap.add_argument(
+        '--s3-max-retries',
+        default=os.environ.get('S3_MAX_RETRIES', 3),
+        help='''
+            Number of times to attempt a S3 operation before giving up.
+            Default is 3.
+        ''',
+    )
 
     subparsers = ap.add_subparsers(
         title='Basic Commands',
@@ -686,7 +685,16 @@ def parse_args():
 
     for command in commands.values():
         command.add_argument('reqs', nargs=argparse.REMAINDER)
-    return ap.parse_args()
+
+    args = ap.parse_args()
+
+    if not boto and args.s3_bucket is not None:
+        ap.error(
+            '--s3-bucket requires that you have boto installed, '
+            'which does not appear to be the case'
+        )
+
+    return args
 
 
 def main():

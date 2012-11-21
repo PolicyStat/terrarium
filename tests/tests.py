@@ -495,7 +495,7 @@ class TestTerrarium(TerrariumTester):
         self._add_test_requirement()
 
         output, return_code = self._install(
-                s3_bucket='bucket',
+            s3_bucket='bucket',
         )
         self.assertEqual(return_code, 2)
         self.assertTrue(

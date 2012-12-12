@@ -93,7 +93,7 @@ class Terrarium(object):
                 with open(arg, 'r') as f:
                     for line in f.readlines():
                         line = line.strip()
-                        if line:
+                        if line and not line.startswith('#'):
                             lines.append(line)
         self._requirements = sorted(lines)
         return self._requirements

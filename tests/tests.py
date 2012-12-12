@@ -235,6 +235,20 @@ class TestTerrarium(TerrariumTester):
         expected = ['test_requirement']
         self.assertEqual(actual, expected)
 
+    def test_install_with_requirement_comments(self):
+        # Verify that a requirement file with comment lines can be used.
+        self._add_requirements(
+            self._get_path('fixtures', 'test_requirement'),
+            '# This is a comment line in the requirements file.',
+        )
+        output, return_code = self._install()
+        self.assertEqual(return_code, 0)
+        actual = self._can_import_requirements(
+            'test_requirement',
+        )
+        expected = ['test_requirement']
+        self.assertEqual(actual, expected)
+
     def test_hash_default_empty_requirements(self):
         # Verify that the hash of an empty requirements file is predictable
         command = 'hash %s' % (

@@ -472,7 +472,7 @@ def after_install(options, base):
     pip.logger.consumers = [(%(PIP_LOGGING)s, sys.stdout)]
 
     # Load version control modules for installing 'editables'
-    pip.version_control()
+    #pip.version_control()
 
     # Run pip install
     c = InstallCommand()

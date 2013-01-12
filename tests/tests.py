@@ -19,11 +19,7 @@ class TerrariumTester(unittest.TestCase):
             'target': target,
             'storage_dir': tempfile.mkdtemp(prefix='test_terrarium_storage-'),
             'python': os.path.join(target, 'bin', 'python'),
-            'terrarium': os.path.join(
-                self._get_path_terrarium(),
-                'terrarium',
-                'terrarium.py',
-            ),
+            'terrarium': 'terrarium',
             'requirements': requirements,
             'environ': {},
             'opts': '',

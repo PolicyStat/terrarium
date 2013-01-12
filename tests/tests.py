@@ -172,7 +172,11 @@ class TerrariumTester(unittest.TestCase):
         self._add_requirements(test_requirement)
 
     def _add_terrarium_requirement(self):
-        self._add_requirements(self._get_path_terrarium())
+        import virtualenv
+        self._add_requirements(
+            self._get_path_terrarium(),
+            'virtualenv==%s' % virtualenv.virtualenv_version
+        )
 
     def _clear_requirements(self, *requirements):
         with open(self.requirements, 'w'):

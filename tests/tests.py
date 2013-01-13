@@ -93,7 +93,7 @@ class TerrariumTester(unittest.TestCase):
             env.update(self.environ)
             defaults['env'] = env
         kwargs = defaults
-        sys.stdout.write('%s\n' % command)
+        sys.stdout.write('Executing "%s"\n' % command)
         params = shlex.split(command)
         result = subprocess.Popen(params, **kwargs)
         output = result.communicate()

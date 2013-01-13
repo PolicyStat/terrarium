@@ -1,10 +1,15 @@
 language: python
 python:
-  - "2.5"
-  - "2.6"
-  - "2.7"
+    - "2.5"
+    - "2.6"
+    - "2.7"
+env:
+    - TRAVIS_VIRTUALENV_VERSION=1.7.1.2
+    - TRAVIS_VIRTUALENV_VERSION=1.7.2
 script: nosetests -v
-install: "pip install -r requirements.txt --use-mirrors"
+install:
+    - pip install -q virtualenv==$TRAVIS_VIRTUALENV_VERSION --use-mirrors
+    - python setup.py -q install
 notifications:
   email:
     - kyle.gibson@frozenonline.com

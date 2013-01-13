@@ -8,6 +8,7 @@ import shutil
 import os
 import platform
 import copy
+import sys
 
 
 class TerrariumTester(unittest.TestCase):
@@ -18,11 +19,7 @@ class TerrariumTester(unittest.TestCase):
             'target': target,
             'storage_dir': tempfile.mkdtemp(prefix='test_terrarium_storage-'),
             'python': os.path.join(target, 'bin', 'python'),
-            'terrarium': os.path.join(
-                self._get_path_terrarium(),
-                'terrarium',
-                'terrarium.py',
-            ),
+            'terrarium': 'terrarium',
             'requirements': requirements,
             'environ': {},
             'opts': '',
@@ -96,6 +93,7 @@ class TerrariumTester(unittest.TestCase):
             env.update(self.environ)
             defaults['env'] = env
         kwargs = defaults
+        sys.stdout.write('Executing "%s"\n' % command)
         params = shlex.split(command)
         result = subprocess.Popen(params, **kwargs)
         output = result.communicate()
@@ -171,7 +169,11 @@ class TerrariumTester(unittest.TestCase):
         self._add_requirements(test_requirement)
 
     def _add_terrarium_requirement(self):
-        self._add_requirements(self._get_path_terrarium())
+        import virtualenv
+        self._add_requirements(
+            self._get_path_terrarium(),
+            'virtualenv==%s' % virtualenv.virtualenv_version
+        )
 
     def _clear_requirements(self, *requirements):
         with open(self.requirements, 'w'):
@@ -187,6 +189,20 @@ class TerrariumTester(unittest.TestCase):
                 imported.append(r)
         return imported
 
+    def assertInstall(self, *args, **kwargs):
+        expected_return_code = kwargs.pop('return_code', 0)
+        output, return_code = self._install(*args, **kwargs)
+        # Print output so it is displayed in the event of an error
+        sys.stdout.write('\n'.join(output))
+        self.assertEqual(return_code, expected_return_code)
+        return output
+
+    def assertExists(self, path):
+        self.assertTrue(os.path.exists(path))
+
+    def assertNotExists(self, path):
+        self.assertFalse(os.path.exists(path))
+
 
 class TestTerrarium(TerrariumTester):
     def test_no_params(self):
@@ -199,34 +215,33 @@ class TestTerrarium(TerrariumTester):
 
     def test_install_empty_requirements(self):
         # Check that we can install an empty requirements file
-        self.assertFalse(os.path.exists(self.python))
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertNotExists(self.python)
+        self.assertInstall()
 
         # check for activate script
-        self.assertTrue(os.path.exists(
+        self.assertExists(
             os.path.join(self.target, 'bin', 'activate')
-        ))
+        )
 
         # Check for python binary
-        self.assertTrue(os.path.exists(self.python))
+        self.assertExists(self.python)
 
         # Check for python
         version = platform.python_version_tuple()
         pythonVV = 'python%s.%s' % (version[0], version[1])
-        pythonVV_path = os.path.join(self.target, 'bin', pythonVV)
-        self.assertTrue(os.path.exists(pythonVV_path))
+        self.assertExists(
+            os.path.join(self.target, 'bin', pythonVV)
+        )
 
         # Check for terrarium bootstrap script
-        self.assertTrue(os.path.exists(
+        self.assertExists(
             os.path.join(self.target, 'bin', 'terrarium_bootstrap.py')
-        ))
+        )
 
     def test_install_with_requirement(self):
         # Verify that a requirement can be used after it is installed
         self._add_test_requirement()
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertInstall()
         # Include a negative test as a control
         actual = self._can_import_requirements(
             'test_requirement',
@@ -241,8 +256,7 @@ class TestTerrarium(TerrariumTester):
             self._get_path('fixtures', 'test_requirement'),
             '# This is a comment line in the requirements file.',
         )
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertInstall()
         actual = self._can_import_requirements(
             'test_requirement',
         )
@@ -264,52 +278,40 @@ class TestTerrarium(TerrariumTester):
     def test_install_replace_backup_exists(self):
         # Verify that a backup of the old environment is created when replacing
         # it
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        self.assertTrue(os.path.exists('%s.bak' % self.target))
+        self.assertInstall()
+        self.assertInstall()
+        self.assertExists('%s.bak' % self.target)
 
     def test_install_replace_backup_removed(self):
         # Verify that --no-backup deletes the backup when replacing an existing
         # environment
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        output, return_code = self._install(no_backup=True)
-        self.assertEqual(return_code, 0)
-        self.assertFalse(os.path.exists('%s.bak' % self.target))
+        self.assertInstall()
+        self.assertNotExists('%s.bak' % self.target)
 
     def test_install_replace_old_backup_removed(self):
         # After doing two installs, we have test and test.bak. On a third
         # install, test.bak already exists, so renaming test to test.bak will
         # fail. Verify that the original test.bak is deleted, only the
         # most-recent backup is preserved
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        self.assertTrue(os.path.exists('%s.bak' % self.target))
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        self.assertTrue(os.path.exists('%s.bak' % self.target))
+        self.assertInstall()
+        self.assertInstall()
+        self.assertExists('%s.bak' % self.target)
+        self.assertInstall()
+        self.assertExists('%s.bak' % self.target)
 
     def test_install_old_backup_symlink(self):
         # Create a scenario where the backup (from a previous install) is
         # actually a symlink instead of a directory
         os.symlink(self.target, '%s.bak' % self.target)
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertInstall()
+        self.assertInstall()
 
     def test_install_replace_activate_virtualenv_path(self):
         # Verify that when replacing an existing virtualenv, the VIRTUAL_ENV
         # path in the activate script matches the original path of the
         # replaced environment
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertInstall()
+        self.assertInstall()
 
         activate = os.path.join(self.target, 'bin', 'activate')
         with open(activate) as f:
@@ -322,13 +324,12 @@ class TestTerrarium(TerrariumTester):
     def test_install_storage_dir_archive(self):
         # Verify that the --storage-dir option causes terrarium create an
         # archive for the given requirement set
-        output, return_code = self._install(storage_dir=self.storage_dir)
-        self.assertEqual(return_code, 0)
+        self.assertInstall(storage_dir=self.storage_dir)
 
         requirements_key = self._key()
 
         archive = os.path.join(self.storage_dir, requirements_key)
-        self.assertTrue(os.path.exists(archive))
+        self.assertExists(archive)
 
         # Verify that the environment is returned to a usable state
         activate = os.path.join(self.target, 'bin', 'activate')
@@ -344,13 +345,12 @@ class TestTerrarium(TerrariumTester):
         # archive for the given requirement set
         self.environ['TERRARIUM_STORAGE_DIR'] = self.storage_dir
 
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertInstall()
 
         requirements_key = self._key()
 
         archive = os.path.join(self.storage_dir, requirements_key)
-        self.assertTrue(os.path.exists(archive))
+        self.assertExists(archive)
 
         # Verify that the environment is returned to a usable state
         activate = os.path.join(self.target, 'bin', 'activate')
@@ -364,36 +364,33 @@ class TestTerrarium(TerrariumTester):
     def test_install_storage_dir_no_archive(self):
         # Verify that the --no-upload option causes terrarium to not create an
         # archive for the given requirement set
-        output, return_code = self._install(
+        self.assertInstall(
             storage_dir=self.storage_dir,
             no_upload=True,
         )
-        self.assertEqual(return_code, 0)
 
         requirements_key = self._key()
 
         archive = os.path.join(self.storage_dir, requirements_key)
-        self.assertFalse(os.path.exists(archive))
+        self.assertNotExists(archive)
 
     def test_install_storage_dir_archive_extracted(self):
         # Verify that an archived terrarium can be later extracted and used
 
         # Build an archive
         self._add_test_requirement()
-        output, return_code = self._install(storage_dir=self.storage_dir)
-        self.assertEqual(return_code, 0)
+        self.assertInstall(storage_dir=self.storage_dir)
 
         requirements_key = self._key()
 
         archive = os.path.join(self.storage_dir, requirements_key)
-        self.assertTrue(os.path.exists(archive))
+        self.assertExists(archive)
 
         # Just install a blank environment
         self._clear_requirements()
 
         # Replace the environment with something else
-        output, return_code = self._install(no_backup=True)
-        self.assertEqual(return_code, 0)
+        self.assertInstall(no_backup=True)
 
         actual = self._can_import_requirements(
             'test_requirement',  # Should not exist in the replacement
@@ -403,11 +400,10 @@ class TestTerrarium(TerrariumTester):
 
         # Now attempt to install from the archive
         self._add_test_requirement()
-        output, return_code = self._install(
+        output = self.assertInstall(
             no_backup=True,
             storage_dir=self.storage_dir,
         )
-        self.assertEqual(return_code, 0)
         self.assertEqual(output[0], '')
         self.assertTrue('Extracting terrarium bundle' in output[1])
 
@@ -424,8 +420,7 @@ class TestTerrarium(TerrariumTester):
         self._add_test_requirement()
         self._add_terrarium_requirement()
 
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        self.assertInstall()
 
         actual = self._can_import_requirements(
             'test_requirement',
@@ -445,11 +440,10 @@ class TestTerrarium(TerrariumTester):
             'terrarium',
         )
 
-        output, return_code = self._install(
+        output = self.assertInstall(
             no_backup=True,
             call_using_python=True,
         )
-        self.assertEqual(return_code, 0)
         self.assertFalse('Requirement already satisfied' in output[0])
 
         actual = self._can_import_requirements(
@@ -468,10 +462,7 @@ class TestTerrarium(TerrariumTester):
 
         self._add_terrarium_requirement()
 
-        output, return_code = self._install(
-            storage_dir=self.storage_dir,
-        )
-        self.assertEqual(return_code, 0)
+        self.assertInstall(storage_dir=self.storage_dir)
 
         # Use terrarium contained in the new environment
         config = self.config_push()
@@ -481,12 +472,11 @@ class TestTerrarium(TerrariumTester):
             'terrarium',
         )
 
-        output, return_code = self._install(
+        self.assertInstall(
             no_backup=True,
             storage_dir=self.storage_dir,
         )
-        self.assertEqual(return_code, 0)
-        self.assertTrue(os.path.exists(self.python))
+        self.assertExists(self.python)
 
     def test_logging_output(self):
         self._add_test_requirement()
@@ -495,8 +485,7 @@ class TestTerrarium(TerrariumTester):
         config = self.config_push()
         config['opts'] = ''
 
-        output, return_code = self._install()
-        self.assertEqual(return_code, 0)
+        output = self.assertInstall()
 
         self.assertNotEqual('', output[0])
         self.assertEqual(output[1], (
@@ -508,10 +497,10 @@ class TestTerrarium(TerrariumTester):
     def test_boto_required_to_use_s3_bucket(self):
         self._add_test_requirement()
 
-        output, return_code = self._install(
+        output = self.assertInstall(
+            return_code=2,
             s3_bucket='bucket',
         )
-        self.assertEqual(return_code, 2)
         self.assertTrue(
             'error: --s3-bucket requires that you have boto installed, '
             'which does not appear to be the case'

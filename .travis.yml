@@ -8,8 +8,8 @@ env:
     - VIRTUALENV_VERSION=1.7.2
 script: nosetests -v
 install:
-    - pip install virtualenv==$VIRTUALENV_VERSION --use-mirrors
-    - pip install -e . --use-mirrors
+    - pip install -q virtualenv==$VIRTUALENV_VERSION --use-mirrors
+    - python setup.py -q install
 notifications:
   email:
     - kyle.gibson@frozenonline.com

@@ -1,2 +1,2 @@
 argparse==1.2.1
-virtualenv==1.7.2
+virtualenv==1.7.1.2,==1.7.2

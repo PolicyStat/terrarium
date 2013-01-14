@@ -1,6 +1,6 @@
 # Terrarium
 
-[![Build Status](https://secure.travis-ci.org/PolicyStat/terrarium.png)](http://travis-ci.org/PolicyStat/terrarium)
+[![Build Status](https://travis-ci.org/PolicyStat/terrarium.png?branch=master)](https://travis-ci.org/PolicyStat/terrarium)
 
 Package and ship relocatable python virtual environments, like a boss.
 

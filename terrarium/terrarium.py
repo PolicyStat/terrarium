@@ -250,7 +250,11 @@ class Terrarium(object):
 
         # Create an archive of the environment
         call_subprocess([
-            'tar', '--exclude-vcs',
+            'tar',
+            '--exclude', '.svn',
+            '--exclude', '.git',
+            '--exclude', '.bzr',
+            '--exclude', '.hg',
             '--exclude', 'bin/python',
             '-cf', archive,
             '-C', target,

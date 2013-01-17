@@ -475,7 +475,8 @@ def after_install(options, base):
     # Debug logging for pip
     pip.logger.consumers = [(%(PIP_LOGGING)s, sys.stdout)]
 
-    # If we are on a version of pip before 1.2, load version control modules for installing 'editables'
+    # If we are on a version of pip before 1.2, load version control modules
+    # for installing 'editables'
     if hasattr(pip, 'version_control'):
         pip.version_control()
 

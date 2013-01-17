@@ -6,6 +6,9 @@ python:
 env:
     - TRAVIS_VIRTUALENV_VERSION=1.7.1.2
     - TRAVIS_VIRTUALENV_VERSION=1.7.2
+    - TRAVIS_VIRTUALENV_VERSION=1.8.2
+    - TRAVIS_VIRTUALENV_VERSION=1.8.3
+    - TRAVIS_VIRTUALENV_VERSION=1.8.4
 script: nosetests -v
 install:
     - pip install -q virtualenv==$TRAVIS_VIRTUALENV_VERSION --use-mirrors

@@ -319,7 +319,7 @@ class Terrarium(object):
                 self.args.s3_bucket,
                 policy='public-read',
             )
-        except boto.exception.S3CreateError:
+        except (boto.exception.S3CreateError, boto.exception.S3ResponseError):
             pass
         return boto.s3.bucket.Bucket(conn, name=self.args.s3_bucket)
 

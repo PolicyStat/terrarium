@@ -123,8 +123,18 @@ class TerrariumTester(unittest.TestCase):
         )
         return output, return_code
 
-    def _terrarium(self, command='', call_using_python=False):
-        command = '%s %s %s' % (self.terrarium, self.opts, command)
+    def _terrarium(self, command='', call_using_python=False, **kwargs):
+        options = []
+        for key, value in kwargs.items():
+            options.append('--%s' % key.replace('_', '-'))
+            if value is not None and value is not True:
+                options.append(value)
+        command = ' '.join([
+            self.terrarium,
+            ' '.join(options),
+            self.opts,
+            command,
+        ])
         if call_using_python:
             output, return_code = self._python(command)
         else:
@@ -138,15 +148,10 @@ class TerrariumTester(unittest.TestCase):
             self.target,
             self.requirements,
         )
-        options = []
-        for key, value in kwargs.items():
-            options.append('--%s' % key.replace('_', '-'))
-            if value is not None and value is not True:
-                options.append(value)
-        command = '%s %s' % (' '.join(options), command)
         output, return_code = self._terrarium(
             command,
             call_using_python=call_using_python,
+            **kwargs
         )
         return output, return_code
 
@@ -505,4 +510,26 @@ class TestTerrarium(TerrariumTester):
             'error: --s3-bucket requires that you have boto installed, '
             'which does not appear to be the case'
             in output[1]
+        )
+
+    def test_sensitive_arguments_are_sensitive(self):
+        command = 'hash %s' % (
+            self.requirements,
+        )
+        output, return_code = self._terrarium(
+            command,
+            verbose=True,
+            s3_secret_key='should_not_appear',
+            s3_access_key='do_not_show_me',
+        )
+        self.assertEqual(return_code, 0)
+        self.assertTrue(
+            output[1].startswith('Initialized with Namespace')
+        )
+        self.assertTrue(
+            'should_not_appear' not in output[1]
+        )
+
+        self.assertTrue(
+            'do_not_show_me' not in output[1]
         )

@@ -38,6 +38,38 @@ MAGIC_NUM = {
 }
 
 
+class Namespace(argparse._AttributeHolder):
+    def __init__(self):
+        super(Namespace, self).__init__()
+        self._sensitive_arguments = set()
+
+    def _get_kwargs(self):
+        '''
+        Exclude arguments which are defined as being sensitive
+        '''
+        kwargs = super(Namespace, self)._get_kwargs()
+        return [
+            (name, value) for name, value in kwargs
+            if name not in self.sensitive_arguments
+        ]
+
+    @property
+    def sensitive_arguments(self):
+        return self._sensitive_arguments
+
+    def add_sensitive_arguments(self, *args):
+        '''
+        Define arguments as being "sensitive." That is, when this object is
+        converted to text, these attributes are not included.
+
+        `args` is a list of strings that indicate the attribute name.
+        '''
+        self._sensitive_arguments |= set(args)
+
+
+argparse.Namespace = Namespace
+
+
 def rmtree(path):
     try:
         if os.path.islink(path):
@@ -72,7 +104,6 @@ class Terrarium(object):
         self.args = args
         self._requirements = None
         self._digest = None
-        logger.debug('Terrarium created with %s', args)
 
     @property
     def digest(self):
@@ -493,6 +524,10 @@ def after_install(options, base):
 
 
 def parse_args():
+    sensitive_arguments = [
+        's3_access_key',
+        's3_secret_key',
+    ]
     ap = argparse.ArgumentParser()
     ap.add_argument(
         '-V', '--version',
@@ -693,6 +728,7 @@ def parse_args():
         command.add_argument('reqs', nargs=argparse.REMAINDER)
 
     args = ap.parse_args()
+    args.add_sensitive_arguments(*sensitive_arguments)
 
     if not boto and args.s3_bucket is not None:
         ap.error(
@@ -709,6 +745,8 @@ def main():
     log_level = max(logging.DEBUG, sum(args.v))
     logger.setLevel(log_level)
     logger.addHandler(StreamHandler())
+
+    logger.debug('Initialized with %s', args)
 
     terrarium = Terrarium(args)
 

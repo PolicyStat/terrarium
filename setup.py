@@ -23,10 +23,6 @@ rel_file = lambda *args: os.path.join(
         os.path.dirname(os.path.abspath(__file__)), *args)
 
 
-def get_readme():
-    return open(rel_file('README.md')).read()
-
-
 def get_requirements():
     data = open(rel_file('requirements.txt')).read()
     lines = map(lambda s: s.strip(), data.splitlines())
@@ -42,7 +38,12 @@ setup_options = dict(
     license='BSD',
     url='http://github.com/policystat/terrarium',
     packages=['terrarium'],
-    long_description=get_readme(),
+    long_description='''
+        Terrarium will package up and compress a virtualenv for you based on
+        pip requirements and then let you ship that environment around. Do the
+        complex dependency math one time and then every subsequent install is
+        basically at the speed of file transfer + decompression.
+    ''',
     install_requires=get_requirements(),
     entry_points={
         'console_scripts':

@@ -512,7 +512,12 @@ def after_install(options, base):
         pip.version_control()
 
     # Run pip install
-    c = InstallCommand()
+    try:
+        c = InstallCommand()
+    except TypeError:
+        from pip.baseparser import create_main_parser
+        main_parser = create_main_parser()
+        c = InstallCommand(main_parser)
     reqs = shlex.split(' '.join(REQUIREMENTS))
     options, args = c.parser.parse_args(reqs)
     options.require_venv = True

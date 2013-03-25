@@ -144,12 +144,12 @@ class TerrariumTester(unittest.TestCase):
         return output, return_code
 
     def _install(self, call_using_python=False, **kwargs):
-        command = '-t %s install %s' % (
-            self.target,
+        command = 'install %s' % (
             self.requirements,
         )
         output, return_code = self._terrarium(
             command,
+            target=self.target,
             call_using_python=call_using_python,
             **kwargs
         )
@@ -287,10 +287,11 @@ class TestTerrarium(TerrariumTester):
         self.assertInstall()
         self.assertExists('%s.bak' % self.target)
 
-    def test_install_replace_backup_removed(self):
+    def test_install_no_backup(self):
         # Verify that --no-backup deletes the backup when replacing an existing
         # environment
         self.assertInstall()
+        self.assertInstall(no_backup=True)
         self.assertNotExists('%s.bak' % self.target)
 
     def test_install_replace_old_backup_removed(self):
@@ -533,6 +534,30 @@ class TestTerrarium(TerrariumTester):
         self.assertTrue(
             'do_not_show_me' not in output[1]
         )
+
+    def test_restore_previously_backed_up_environment(self):
+        output, return_code = self._terrarium(
+            'revert',
+            target=self.target,
+        )
+        self.assertEqual(return_code, 1)
+
+        self._add_test_requirement()
+        self.assertInstall()
+        with open(os.path.join(self.target, 'foo'), 'w') as f:
+            f.write('bar')
+        self.assertInstall()
+        with open(os.path.join(self.target, 'moo'), 'w') as f:
+            f.write('cow')
+        self.assertExists('%s.bak' % self.target)
+        output, return_code = self._terrarium(
+            'revert',
+            target=self.target,
+        )
+        self.assertEqual(return_code, 0)
+        self.assertNotExists('%s.bak' % self.target)
+        self.assertExists(os.path.join(self.target, 'foo'))
+        self.assertNotExists(os.path.join(self.target, 'moo'))
 
     def test_require_download(self):
         self._add_test_requirement()

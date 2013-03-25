@@ -129,19 +129,49 @@ class Terrarium(object):
         self._requirements = sorted(lines)
         return self._requirements
 
+    def restore_previously_backed_up_environment(self):
+        backup = self.get_backup_location()
+        if not self.environment_exists(backup):
+            logger.info(
+                'Failed to restore backup. It doesn\'t appear to exist at %s',
+                backup,
+            )
+            return 1
+
+        target = self.get_target_location()
+        if os.path.isdir(target):
+            logger.info('Deleting environment at %s', target)
+            rmtree(target)
+
+        logger.info('Renaming %s to %s', backup, target)
+        os.rename(backup, target)
+        return 0
+
+    def get_target_location(self):
+        return os.path.abspath(self.args.target)
+
+    def get_backup_location(self, target=None):
+        if target is None:
+            target = self.get_target_location()
+        return ''.join([target, self.args.backup_suffix])
+
+    def environment_exists(self, env):
+        return os.path.exists(os.path.join(
+            env,
+            'bin',
+            'activate',
+        ))
+
     def install(self):
         logger.debug('Running install')
 
-        old_target = os.path.abspath(self.args.target)
+        old_target = self.get_target_location()
+        old_target_backup = self.get_backup_location()
         new_target = old_target
         prompt = os.path.basename(new_target)
 
         # Are we building a new environment, or replacing an existing one?
-        old_target_exists = os.path.exists(os.path.join(
-            old_target,
-            'bin',
-            'activate',
-        ))
+        old_target_exists = self.environment_exists(old_target)
         if old_target_exists:
             new_target = tempfile.mkdtemp(
                 prefix='%s.' % os.path.basename(old_target),
@@ -186,7 +216,6 @@ class Terrarium(object):
             if self.args.upload:
                 self.upload(new_target)
 
-        old_target_backup = '%s%s' % (old_target, self.args.backup_suffix)
         if old_target_exists:
             logger.info('Moving old environment out of the way')
             if os.path.exists(old_target_backup):
@@ -714,17 +743,17 @@ def parse_args():
             'key',
             help='Display remote key for current requirement set and platform',
         ),
-        'exists': subparsers.add_parser(
-            'exists',
-            help='''
-                Return exit code 0 if environment matches requirement set
-            ''',
-        ),
         'install': subparsers.add_parser(
             'install',
             help='''
                 Replace current environment with the one given by the
                 requirement set.
+            ''',
+        ),
+        'revert': subparsers.add_parser(
+            'revert',
+            help='''
+                Restore the most recent backed-up virtualenv, if it exists.
             ''',
         ),
     }
@@ -743,7 +772,6 @@ def parse_args():
 
     return args
 
-
 def main():
     args = parse_args()
 
@@ -755,19 +783,17 @@ def main():
 
     terrarium = Terrarium(args)
 
+    r = 0
     if args.command == 'hash':
         sys.stdout.write('%s\n' % terrarium.digest)
     if args.command == 'key':
         key = terrarium.make_remote_key()
         sys.stdout.write('%s\n' % key)
-    elif args.command == 'check':
-        if terrarium.is_clean():
-            sys.exit(0)
-        else:
-            sys.exit(1)
     elif args.command == 'install':
         r = terrarium.install()
-        sys.exit(r)
+    elif args.command == 'revert':
+        r = terrarium.restore_previously_backed_up_environment()
+    sys.exit(r)
 
 if __name__ == '__main__':
     main()

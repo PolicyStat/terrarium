@@ -12,7 +12,7 @@ import logging
 from logging import getLogger, StreamHandler
 
 # Update here and in setup.py
-VERSION = '1.0.0rc5-dev'
+VERSION = '1.0.0rc4'
 
 try:
     import boto  # noqa

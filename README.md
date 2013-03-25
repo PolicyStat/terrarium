@@ -43,6 +43,8 @@ If `testenv` is an already existing environment, it will replace it with a fresh
     source testenv/bin/activate
     terrarium install test_requirements.txt
 
+The old environment can be restored using `terrarium revert`.
+
 When a virtualenv is already activated, the --target option defaults to
 the activated environment. Terrarium will replace the activated
 environment (`testenv`) with a fresh environment defined by `test_requirements.txt`.

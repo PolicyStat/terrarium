@@ -558,3 +558,19 @@ class TestTerrarium(TerrariumTester):
         self.assertNotExists('%s.bak' % self.target)
         self.assertExists(os.path.join(self.target, 'foo'))
         self.assertNotExists(os.path.join(self.target, 'moo'))
+
+    def test_require_download(self):
+        self._add_test_requirement()
+
+        output = self.assertInstall(
+            return_code=1,
+            storage_dir=self.storage_dir,
+            require_download=True,
+        )
+        self.assertEqual(
+            output[1],
+            'Download archive failed\n'
+            'Failed to download bundle and download is required. '
+            'Refusing to build a new bundle.\n',
+        )
+        self.assertNotExists(self.python)

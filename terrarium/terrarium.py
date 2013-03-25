@@ -184,6 +184,13 @@ class Terrarium(object):
             downloaded = self.download(new_target)
 
         if not downloaded:
+            if self.args.require_download:
+                logger.error(
+                    'Failed to download bundle and download is '
+                    'required. Refusing to build a new bundle.'
+                )
+                return 1
+
             # Create a self-contained script to create a virtual environment
             # and install all of the requested requirements
             logger.info('Building new environment')
@@ -618,6 +625,15 @@ def parse_args():
             attempt to download an existing terrarium bundle instead of
             building a new one. Using --no-download forces terrarium to build a
             new environment.
+        ''',
+    )
+    ap.add_argument(
+        '--require-download',
+        default=False,
+        action='store_true',
+        help='''
+            If we fail to download a terrarium bundle from the storage
+            location, do not proceed to build one.
         ''',
     )
     ap.add_argument(

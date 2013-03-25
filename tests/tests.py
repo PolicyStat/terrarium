@@ -287,10 +287,11 @@ class TestTerrarium(TerrariumTester):
         self.assertInstall()
         self.assertExists('%s.bak' % self.target)
 
-    def test_install_replace_backup_removed(self):
+    def test_install_no_backup(self):
         # Verify that --no-backup deletes the backup when replacing an existing
         # environment
         self.assertInstall()
+        self.assertInstall(no_backup=True)
         self.assertNotExists('%s.bak' % self.target)
 
     def test_install_replace_old_backup_removed(self):

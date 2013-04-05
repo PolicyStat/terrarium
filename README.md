@@ -12,7 +12,7 @@ basically at the speed of file transfer + decompression.
 ## The Problem Terrarium Solves
 
 Pip and virtualenv are awesome, but pip is not designed to allow
-consistent and reproducable updates of existing environments.  Pip is
+consistent and reproducible updates of existing environments.  Pip is
 also a general installation tool, meaning that it's not near as fast as
 shipping around compressed source code.  This means that even if you
 have well-made requirements files, your pip-based deploys are either
@@ -58,7 +58,7 @@ After building a fresh environment, terrarium will archive and compress
 the environment, and then copy it to the location specified by
 `storage-dir`.
 
-Subsequent installs for the same requirement set that specify the same
+On subsequent installs for the same requirement set that specify the same
 `storage-dir`, terrarium will copy and extract the compressed archive
 from `/mnt/storage`.
 

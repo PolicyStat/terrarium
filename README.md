@@ -1,6 +1,7 @@
 # Terrarium
 
 [![Build Status](https://travis-ci.org/PolicyStat/terrarium.png?branch=master)](https://travis-ci.org/PolicyStat/terrarium)
+[![Downloads](https://pypip.in/v/terrarium/badge.png)](https://crate.io/packages/terrarium/)
 
 Package and ship relocatable python virtual environments, like a boss.
 

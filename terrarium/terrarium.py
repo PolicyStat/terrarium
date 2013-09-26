@@ -554,7 +554,7 @@ def after_install(options, base):
         from pip.baseparser import create_main_parser
         main_parser = create_main_parser()
         c = InstallCommand(main_parser)
-    reqs = shlex.split(' '.join(REQUIREMENTS))
+    reqs = shlex.split(' '.join(REQUIREMENTS), comments=True)
     options, args = c.parser.parse_args(reqs)
     options.require_venv = True
     options.ignore_installed = True

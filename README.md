@@ -97,3 +97,25 @@ Python 3 support is
 [planned](https://github.com/PolicyStat/terrarium/issues/8) and
 Windows support is an option if folks require it (pull requests and
 bug reports welcome).
+
+## Tips
+
+### Using an alternative index server
+
+If you're using an index server other than PyPI (perhaps an index server
+with internal-only packages), then you need to be able to tell terrarium
+to use that index URL. Terrariam does not have the `-i`
+(`--index-url`) option that pip has, so how do you indicate the index
+URL? Well, you may recall that pip requirements files can also
+contain command-line options... So add a line like this to one of your
+requirements files:
+
+```
+--index-url http://internal-index-server.corp/index
+```
+
+You can add a line like the above to an existing requirements file that
+has a list of packages or you could add it to a separate requirements
+file and then add that to the terrarium command-line.
+
+    terrarium --target testenv install internal-index-server.txt requirements.txt

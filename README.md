@@ -104,7 +104,7 @@ bug reports welcome).
 
 If you're using an index server other than PyPI (perhaps an index server
 with internal-only packages), then you need to be able to tell terrarium
-to use that index URL. Terrariam does not have the `-i`
+to use that index URL. Terrarium does not have the `-i`
 (`--index-url`) option that pip has, so how do you indicate the index
 URL? Well, you may recall that pip requirements files can also
 contain command-line options... So add a line like this to one of your

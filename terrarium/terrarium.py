@@ -30,7 +30,7 @@ logger = getLogger(__name__)
 
 # http://www.astro.keele.ac.uk/oldusers/rno/Computing/File_magic.html
 MAGIC_NUM = {
-            # magic code, offset
+    # magic code, offset
     'ELF': ('.ELF', 0),
     'GZIP': ('\x1f\x8b', 0),
     'BZIP': ('\x42\x5a', 0),
@@ -269,8 +269,12 @@ class Terrarium(object):
         return 0
 
     @staticmethod
-    def replace_all_in_directory(location, old,
-            replace='__VIRTUAL_ENV__', binary=False):
+    def replace_all_in_directory(
+        location,
+        old,
+        replace='__VIRTUAL_ENV__',
+        binary=False,
+    ):
         for name in os.listdir(location):
             full_path = os.path.join(location, name)
             data = None
@@ -486,19 +490,20 @@ class Terrarium(object):
 
     def upload(self, target):
         if self.args.storage_dir:
-            self.upload_to_storage_dir(target,
-                    self.args.storage_dir)
+            self.upload_to_storage_dir(
+                target,
+                self.args.storage_dir,
+            )
         if boto and self.args.s3_bucket:
             self.upload_to_s3(target)
 
     def create_bootstrap(self, dest):
         extra_text = (
-            TERRARIUM_BOOTSTRAP_EXTRA_TEXT %
-                {
-                    'REQUIREMENTS': self.requirements,
-                    'VENV_LOGGING': self.args.virtualenv_log_level,
-                    'PIP_LOGGING': self.args.pip_log_level,
-                }
+            TERRARIUM_BOOTSTRAP_EXTRA_TEXT % {
+                'REQUIREMENTS': self.requirements,
+                'VENV_LOGGING': self.args.virtualenv_log_level,
+                'PIP_LOGGING': self.args.pip_log_level,
+            }
         )
         output = create_bootstrap_script(extra_text)
         with open(dest, 'w') as f:
@@ -787,6 +792,7 @@ def parse_args():
         )
 
     return args
+
 
 def main():
     args = parse_args()

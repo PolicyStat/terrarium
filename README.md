@@ -92,7 +92,8 @@ Each of these options can be specified using environment variables, e.g.
 
 ## Python/Platform Support
 
-Currently, python 2.5, 2.6 and 2.7 on Linux are supported and tested.
+Currently,
+python 2.6 and 2.7 on Linux are supported and tested.
 Python 3 support is 
 [planned](https://github.com/PolicyStat/terrarium/issues/8) and
 Windows support is an option if folks require it (pull requests and

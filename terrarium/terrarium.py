@@ -11,8 +11,7 @@ import logging
 
 from logging import getLogger, StreamHandler
 
-# Update here and in setup.py
-VERSION = '1.0.0rc5-dev'
+import terrarium
 
 try:
     import boto  # noqa
@@ -578,7 +577,7 @@ def parse_args():
     ap.add_argument(
         '-V', '--version',
         action='version',
-        version='%(prog)s ' + VERSION,
+        version='%(prog)s ' + terrarium.__version__,
     )
     ap.add_argument(
         '-v', '--verbose',

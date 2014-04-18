@@ -3,17 +3,17 @@ Development
 ###########
 
 Installing requirements
-=======================
+#######################
 
 Using pip
----------
+=========
 
 .. code-block:: shell-session
 
    $ pip install -r requirements/docs.txt -r requirements/testing.txt
 
 Building the documentation locally
-==================================
+##################################
 
 #. Install the documentation requirements:
 
@@ -35,7 +35,7 @@ Building the documentation locally
       $ firefox docs/_build/html/index.html
 
 Running tests
-=============
+#############
 
 #. Install the development requirements:
 
@@ -52,12 +52,12 @@ Running tests
 To run all tests against all supported versions of python, use ``tox``.
 
 Running tests with tox
-----------------------
+======================
 
 ``tox`` allows us to use one command to run tests against all versions of python that we support.
 
 Setting up tox
-^^^^^^^^^^^^^^
+--------------
 
 #. Decide how you want to manage multiple python versions.
 
@@ -78,7 +78,7 @@ Setting up tox
 #. `Configure tox <http://tox.readthedocs.org/en/latest>`_.
 
 Running tox
-^^^^^^^^^^^
+-----------
 
 Now that you have ``tox`` setup, you just need to run the command ``tox`` from the project root directory.
 
@@ -87,7 +87,7 @@ Now that you have ``tox`` setup, you just need to run the command ``tox`` from t
    $ tox
 
 Getting involved
-================
+################
 
 The terrarium project welcomes help in any of the following ways:
 
@@ -95,7 +95,7 @@ The terrarium project welcomes help in any of the following ways:
 * Participating on open issues and pull requests, reviewing changes
 
 Release process
-===============
+###############
 
 #. Update
    `CHANGELOG <https://github.com/PolicyStat/terrarium/blob/master/CHANGELOG.rst>`_.

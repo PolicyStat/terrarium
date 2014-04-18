@@ -68,7 +68,7 @@ except ImportError:
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', '_*.rst']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -100,14 +100,17 @@ pygments_style = 'sphinx'
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'default'
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    try:
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    except ImportError:
+        pass
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

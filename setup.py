@@ -56,12 +56,7 @@ def main():
         license='BSD',
         url='http://github.com/policystat/terrarium',
         packages=['terrarium'],
-        long_description='''
-            Terrarium will package up and compress a virtualenv for you based
-            on pip requirements and then let you ship that environment around.
-            Do the complex dependency math one time and then every subsequent
-            install is basically at the speed of file transfer + decompression.
-        ''',
+        long_description=read('README.rst'),
         install_requires=install_requires,
         entry_points={
             'console_scripts':

@@ -49,12 +49,17 @@ Running tests
 
       $ nosetests
 
-To run all tests against all supported versions of python, use ``tox``.
+To run all tests against all supported versions of python,
+use ``tox``.
 
 Running tests with tox
 ======================
 
-``tox`` allows us to use one command to run tests against all versions of python that we support.
+``tox`` allows us to use
+one command to
+run tests against
+all versions of python
+that we support.
 
 Setting up tox
 --------------
@@ -62,11 +67,14 @@ Setting up tox
 #. Decide how you want to manage multiple python versions.
 
    #. System level using a package manager such as ``apt-get``.
-      This approach will likely require adding additional ``apt-get`` sources in
-      order to install alternative versions of python.
+      This approach will likely require adding additional
+      ``apt-get`` sources
+      in order to install
+      alternative versions of python.
    #. Use `pyenv <https://github.com/yyuu/pyenv-installer#installation>`_
       to manage and install multiple python versions.
-      After installation, see the
+      After installation,
+      see the
       `pyenv command reference <https://github.com/yyuu/pyenv/blob/master/COMMANDS.md>`_.
 
 #. Install ``tox``.
@@ -91,8 +99,10 @@ Getting involved
 
 The terrarium project welcomes help in any of the following ways:
 
-* Making pull requests on github for code, tests and documentation.
-* Participating on open issues and pull requests, reviewing changes
+* Making pull requests on github for code,
+  tests and documentation.
+* Participating on open issues and pull requests,
+  reviewing changes
 
 Release process
 ###############

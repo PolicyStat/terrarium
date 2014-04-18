@@ -26,9 +26,12 @@ existing activated virtual environment with a different set of packages.
     $ source env/bin/activate
     $ terrarium install other_requirements.txt
 
-The environment that was replaced is renamed to ``env.bak``,
-and can be restored using ``terrarium revert``.
-After installing the ``other_requirements``,
-it is not necessary to run ``deactivate``
-or ``activate``
-to begin using the new environment.
+.. note::
+    The environment that was replaced is renamed to ``env.bak``,
+    and can be restored using ``terrarium revert``.
+
+.. note::
+    After installing the ``other_requirements``,
+    it is not necessary to run ``deactivate``
+    or ``activate``
+    to begin using the new environment.

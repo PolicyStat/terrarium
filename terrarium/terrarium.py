@@ -393,6 +393,26 @@ class Terrarium(object):
             pass
         return boto.s3.bucket.Bucket(conn, name=self.args.s3_bucket)
 
+    def _attempt_s3_download(self, target):
+        if not boto:
+            return False
+        bucket = self._get_s3_bucket()
+        if bucket:
+            remote_key = self.make_remote_key()
+            key = bucket.get_key(remote_key)
+            if key:
+                logger.info(
+                    'Downloading %s/%s from S3 '
+                    '(this may take time) ...'
+                    % (self.args.s3_bucket, remote_key)
+                )
+                fd, archive = tempfile.mkstemp()
+                key.get_contents_to_filename(archive)
+                self.extract(archive, target)
+                os.close(fd)
+                os.unlink(archive)
+                return True
+
     def download(self, target):
         if self.args.storage_dir:
             remote_archive = os.path.join(
@@ -413,23 +433,9 @@ class Terrarium(object):
                 os.unlink(local_archive)
                 return True
             logger.error('Download archive failed')
-        if boto and self.args.s3_bucket:
-            bucket = self._get_s3_bucket()
-            if bucket:
-                remote_key = self.make_remote_key()
-                key = bucket.get_key(remote_key)
-                if key:
-                    logger.info(
-                        'Downloading %s/%s from S3 '
-                        '(this may take time) ...'
-                        % (self.args.s3_bucket, remote_key)
-                    )
-                    fd, archive = tempfile.mkstemp()
-                    key.get_contents_to_filename(archive)
-                    self.extract(archive, target)
-                    os.close(fd)
-                    os.unlink(archive)
-                    return True
+
+        if self.args.s3_bucket:
+            self._attempt_s3_download(target)
 
     def make_remote_key(self):
         import platform

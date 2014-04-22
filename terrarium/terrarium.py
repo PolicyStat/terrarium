@@ -517,8 +517,14 @@ class Terrarium(object):
                 target,
                 self.args.storage_dir,
             )
-        if boto and self.args.s3_bucket:
-            self.upload_to_s3(target)
+        if self.args.s3_bucket:
+            if boto:
+                self.upload_to_s3(target)
+            else:
+                logger.critical(
+                    "--upload combined with --s3-bucket requires that you "
+                    "have boto installed, which does not appear to be the case"
+                )
 
     def create_bootstrap(self, dest):
         extra_text = (
@@ -807,12 +813,6 @@ def parse_args():
 
     args = ap.parse_args()
     args.add_sensitive_arguments(*sensitive_arguments)
-
-    if not boto and args.s3_bucket is not None:
-        ap.error(
-            '--s3-bucket requires that you have boto installed, '
-            'which does not appear to be the case'
-        )
 
     return args
 

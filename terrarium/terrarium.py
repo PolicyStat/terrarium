@@ -8,6 +8,7 @@ import sys
 import tempfile
 import shutil
 import logging
+import requests
 
 from logging import getLogger, StreamHandler
 
@@ -394,11 +395,27 @@ class Terrarium(object):
         return boto.s3.bucket.Bucket(conn, name=self.args.s3_bucket)
 
     def _attempt_s3_download(self, target):
+        # attempt to download from public S3 url
+        base_s3_url = "https://%(bucket_name)s.s3.amazonaws.com/%(key)s"
+        remote_key = self.make_remote_key()
+        bucket_name = self.args.s3_bucket
+        s3_url = base_s3_url % {"bucket_name": bucket_name, "key": remote_key}
+        r = requests.get(s3_url, stream=True)
+        if r.ok:
+            fd, archive = tempfile.mkstemp()
+            with open(archive, 'wb') as f:
+                for chunk in r.iter_content(1024):
+                    f.write(chunk)
+
+            self.extract(archive, target)
+            os.close(fd)
+            os.unlink(archive)
+            return True
+
         if not boto:
             return False
         bucket = self._get_s3_bucket()
         if bucket:
-            remote_key = self.make_remote_key()
             key = bucket.get_key(remote_key)
             if key:
                 logger.info(
@@ -435,7 +452,8 @@ class Terrarium(object):
             logger.error('Download archive failed')
 
         if self.args.s3_bucket:
-            self._attempt_s3_download(target)
+            download_successful = self._attempt_s3_download(target)
+            return download_successful
 
     def make_remote_key(self):
         import platform

@@ -4,6 +4,13 @@
 
 See ``terrarium --help`` for a complete list of options and commands.
 
+.. note::
+
+    The following documentation assumes you are familiar with `virtualenv
+    <http://www.virtualenv.org/en/latest/>`_. If not, run through `this
+    tutorial <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_. We'll
+    wait.
+
 Creating a new environment
 ##########################
 
@@ -12,7 +19,7 @@ includes the packages defined in ``requirements.txt``
 
 .. code-block:: shell-session
 
-    $ terrarium --target env install requirements.txt
+    $ terrarium --target path/to/env install requirements.txt
 
 Replacing an existing environment
 #################################
@@ -22,8 +29,8 @@ existing activated virtual environment with a different set of packages.
 
 .. code-block:: shell-session
 
-    $ terrarium --target env install requirements.txt
-    $ source env/bin/activate
+    $ terrarium --target path/to/env install requirements.txt
+    $ source path/to/env/bin/activate
     $ terrarium install other_requirements.txt
 
 .. note::

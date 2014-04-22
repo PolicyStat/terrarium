@@ -43,6 +43,7 @@ def main():
     python_version = sys.version_info[:2]
     install_requires = [
         'virtualenv>=1.7.2,<=1.9.1',
+        'requests>=1.0.0',
     ]
     if python_version < (2, 7) or (3, 0) <= python_version <= (3, 1):
         install_requires += ['argparse']

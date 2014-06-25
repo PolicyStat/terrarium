@@ -500,17 +500,12 @@ class TestTerrarium(TerrariumTester):
             'Terrarium is finished\n'
         ))
 
-    def test_boto_required_to_use_s3_bucket(self):
+    def test_boto_not_required_to_use_s3_bucket(self):
         self._add_test_requirement()
 
-        output = self.assertInstall(
-            return_code=2,
+        self.assertInstall(
+            return_code=0,
             s3_bucket='bucket',
-        )
-        self.assertTrue(
-            'error: --s3-bucket requires that you have boto installed, '
-            'which does not appear to be the case'
-            in output[1]
         )
 
     def test_sensitive_arguments_are_sensitive(self):

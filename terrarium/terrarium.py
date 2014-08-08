@@ -411,6 +411,14 @@ class Terrarium(object):
             os.close(fd)
             os.unlink(archive)
             return True
+        # Check if permissions denied
+        elif not self.args.s3_access_key and 'AccessDenied' in r.content:
+            print (
+                'Access was denied to s3 bucket hash %s '
+                'and no key was provided. '
+                'Make sure the s3 bucket hash is public '
+                'readable.' % (remote_key)
+            )
 
         if not boto:
             return False

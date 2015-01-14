@@ -1,10 +1,10 @@
-**1.0.0rc4**
+**1.0.0-rc.4**
 
 - `Add support for pip 1.3.1 <https://github.com/PolicyStat/terrarium/issues/31>`_
 - `Add command to restore backup <https://github.com/PolicyStat/terrarium/issues/28>`_
 - `Added --require-download option <https://github.com/PolicyStat/terrarium/issues/32>`_
 
-**1.0.0rc3**
+**1.0.0-rc.3**
 
 - `Don't print S3 secret key in verbose mode / debug level <https://github.com/PolicyStat/terrarium/issues/25>`_
 - `Update requirements to include support for virtualenv 1.8.4 and others <https://github.com/PolicyStat/terrarium/issues/21>`_
@@ -18,12 +18,12 @@
 - `Gracefully handle permission failures when creating environment backup  <https://github.com/PolicyStat/terrarium/issues/9>`_
 
 
-**1.0.0rc2**
+**1.0.0-rc.2**
 
 - `Cannot call rmtree on a symbolic link <https://github.com/PolicyStat/terrarium/issues/6>`_
 - `Dangling symlink on extract <https://github.com/PolicyStat/terrarium/issues/5>`_
 
-**1.0.0rc1**
+**1.0.0-rc.1**
 
 - `boto.S3Connection should be boto.s3.connection.S3Connection <https://github.com/PolicyStat/terrarium/issues/4>`_
 - `Terrarium needs to fix paths after upload <https://github.com/PolicyStat/terrarium/issues/3>`_

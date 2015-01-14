@@ -498,11 +498,11 @@ class Terrarium(object):
 
     def create_bootstrap(self, dest):
         extra_text = (
-            TERRARIUM_BOOTSTRAP_EXTRA_TEXT % {
-                'REQUIREMENTS': self.requirements,
-                'VENV_LOGGING': self.args.virtualenv_log_level,
-                'PIP_LOGGING': self.args.pip_log_level,
-            }
+            TERRARIUM_BOOTSTRAP_EXTRA_TEXT.format(
+                requirements=self.requirements,
+                virtualenv_log_level=self.args.virtualenv_log_level,
+                pip_log_level=self.args.pip_log_level,
+            )
         )
         output = create_bootstrap_script(extra_text)
         with open(dest, 'w') as f:
@@ -514,11 +514,11 @@ def adjust_options(options, args):
     options.use_distribute = True
     options.system_site_packages = False
 
-REQUIREMENTS = %(REQUIREMENTS)s
+REQUIREMENTS = {requirements}
 
 def after_install(options, base):
     # Debug logging for virtualenv
-    logger.consumers = [(%(VENV_LOGGING)s, sys.stdout)]
+    logger.consumers = [({virtualenv_log_level}, sys.stdout)]
 
     home_dir, lib_dir, inc_dir, bin_dir = path_locations(base)
 
@@ -528,8 +528,11 @@ def after_install(options, base):
     sys.executable = join(os.path.abspath(bin_dir), 'python')
 
     # Create a symlink for pythonM.N
-    pyversion = (sys.version_info[0], sys.version_info[1])
-    pyversion_path = join(bin_dir, 'python%%d.%%d' %% pyversion)
+    pyv_major, pyv_minor = (sys.version_info[0], sys.version_info[1])
+    pyversion_path = join(bin_dir, 'python{{major}}.{{minor}}'.format(
+        major=pyv_major,
+        minor=pyv_minor,
+    ))
     # If virtualenv is run using pythonM.N, that binary will already exist so
     # there's no need to create it
     if not os.path.exists(pyversion_path):
@@ -544,7 +547,7 @@ def after_install(options, base):
     import shlex
 
     # Debug logging for pip
-    pip.logger.consumers = [(%(PIP_LOGGING)s, sys.stdout)]
+    pip.logger.consumers = [({virtualenv_log_level}, sys.stdout)]
 
     # If we are on a version of pip before 1.2, load version control modules
     # for installing 'editables'

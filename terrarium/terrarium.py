@@ -509,7 +509,7 @@ class Terrarium(object):
             f.write(output)
 
 
-TERRARIUM_BOOTSTRAP_EXTRA_TEXT = '''
+TERRARIUM_BOOTSTRAP_EXTRA_TEXT = r'''
 def adjust_options(options, args):
     options.use_distribute = True
     options.system_site_packages = False
@@ -517,6 +517,9 @@ def adjust_options(options, args):
 REQUIREMENTS = {requirements}
 
 def after_install(options, base):
+    import os
+    import tempfile
+
     # Debug logging for virtualenv
     logger.consumers = [({virtualenv_log_level}, sys.stdout)]
 
@@ -544,7 +547,6 @@ def after_install(options, base):
 
     import pip
     from pip.commands.install import InstallCommand
-    import shlex
 
     # Debug logging for pip
     pip.logger.consumers = [({virtualenv_log_level}, sys.stdout)]
@@ -561,8 +563,11 @@ def after_install(options, base):
         from pip.baseparser import create_main_parser
         main_parser = create_main_parser()
         c = InstallCommand(main_parser)
-    reqs = shlex.split(' '.join(REQUIREMENTS), comments=True)
-    options, args = c.parser.parse_args(reqs)
+
+    fd, file_path = tempfile.mkstemp()
+    with os.fdopen(fd, 'w') as f:
+        f.write('\n'.join(REQUIREMENTS))
+    options, args = c.parser.parse_args(['-r', file_path])
     options.require_venv = True
     options.ignore_installed = True
     requirementSet = c.run(options, args)

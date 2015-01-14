@@ -1,3 +1,15 @@
+**1.0.0-rc.5**
+
+- `Fixed some spelling and grammar in the README <https://github.com/PolicyStat/terrarium/pull/34>`_
+- `Added "Tips" Section to README <https://github.com/PolicyStat/terrarium/pull/40>`_
+- `Permit inline comments in requirements files <https://github.com/PolicyStat/terrarium/pull/41>`_
+- `Added tox.ini for tox <https://github.com/PolicyStat/terrarium/pull/38>`_
+- `Deprecate python 2.5 <https://github.com/PolicyStat/terrarium/pull/44>`_
+- `Update travis configuration to use tox <https://github.com/PolicyStat/terrarium/pull/45>`_
+- `Update documentation to use sphinx <https://github.com/PolicyStat/terrarium/pull/46>`_
+- `Update version number in only one place <https://github.com/PolicyStat/terrarium/pull/47>`_
+- `Moved README content to sphinx docs <https://github.com/PolicyStat/terrarium/pull/49>`_
+
 **1.0.0-rc.4**
 
 - `Add support for pip 1.3.1 <https://github.com/PolicyStat/terrarium/issues/31>`_

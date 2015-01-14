@@ -572,6 +572,8 @@ def after_install(options, base):
     options.ignore_installed = True
     requirementSet = c.run(options, args)
 
+    os.unlink(file_path)
+
     make_environment_relocatable(base)
 '''
 

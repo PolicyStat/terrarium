@@ -268,6 +268,20 @@ class TestTerrarium(TerrariumTester):
         expected = ['test_requirement']
         self.assertEqual(actual, expected)
 
+    def test_install_editable_with_hash_egg_name(self):
+        # Verify that a requirement file with a hash egg name can be used and
+        # is not confused with a comment
+        # If the #egg=foobar is removed, pip will fail
+        self._add_requirements(
+            '-e git+git://github.com/PolicyStat/terrarium.git#egg=foobar',
+        )
+        self.assertInstall()
+        actual = self._can_import_requirements(
+            'terrarium',
+        )
+        expected = ['terrarium']
+        self.assertEqual(actual, expected)
+
     def test_hash_default_empty_requirements(self):
         # Verify that the hash of an empty requirements file is predictable
         command = 'hash %s' % (

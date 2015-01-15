@@ -1,3 +1,7 @@
+**1.0.0-rc.6**
+
+- `shlex comments=True breaks remote source requirements <https://github.com/PolicyStat/terrarium/pull/52>`_
+
 **1.0.0-rc.5**
 
 - `Fixed some spelling and grammar in the README <https://github.com/PolicyStat/terrarium/pull/34>`_

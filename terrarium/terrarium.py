@@ -411,9 +411,9 @@ class Terrarium(object):
 
         # try to make a new one, or pass if existed
         try:
-            bucket = conn.new_bucket(self.args.gcs_bucket)
+            bucket = conn.create_bucket(self.args.gcs_bucket)
             bucket.make_public(recursive=True, future=True)
-        except TypeError:
+        except Exception:
             pass
 
         return conn.get_bucket(self.args.gcs_bucket)
@@ -465,7 +465,7 @@ class Terrarium(object):
             bucket = self._get_gcs_bucket()
             if bucket:
                 # blob is the same concept of S3's object on Google Cloud Storage
-                blob = bucket.get_blob(remote_key)
+                blob = bucket.get_key(remote_key)
                 if blob:
                     logger.info(
                         'Downloading %s/%s from Google Cloud Storage '
@@ -542,7 +542,7 @@ class Terrarium(object):
         if not bucket: 
             return False
 
-        blob = bucket.new_blob(self.make_remote_key())
+        blob = bucket.new_key(self.make_remote_key())
         archive = self.archive(target)
         if not archive:
             logger.error('Archiving failed')
@@ -864,7 +864,7 @@ def parse_args():
     )
     ap.add_argument(
         '--gcs-private-key',
-        defaults=os.environ.get('GCS_PRIVATE_KEY', None),
+        default=os.environ.get('GCS_PRIVATE_KEY', None),
         help='''
             Google Cloud Storage private key. Defaults to GCS_PRIVATE_KEY env variable.
         '''

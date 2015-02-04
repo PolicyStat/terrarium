@@ -105,7 +105,7 @@ The terrarium project welcomes help in any of the following ways:
   reviewing changes
   
 Pull Request Checklist
-----------------------
+======================
 
 To have the best chance at an immediate merge,
 your pull request should have:

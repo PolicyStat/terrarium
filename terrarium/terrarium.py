@@ -44,6 +44,7 @@ MAGIC_NUM = {
 
 
 class Namespace(argparse._AttributeHolder):
+
     def __init__(self):
         super(Namespace, self).__init__()
         self._sensitive_arguments = set()
@@ -105,6 +106,7 @@ def get_type(path):
 
 
 class Terrarium(object):
+
     def __init__(self, args):
         self.args = args
         self._requirements = None
@@ -438,7 +440,7 @@ class Terrarium(object):
                 os.unlink(local_archive)
                 return True
             logger.error('Download archive failed')
-        
+
         # make remote key for extenal storage system
         remote_key = self.make_remote_key()
 
@@ -539,7 +541,7 @@ class Terrarium(object):
         logger.info('Uploading environment to Google Cloud Storage')
         attempts = 0
         bucket = self._get_gcs_bucket()
-        if not bucket: 
+        if not bucket:
             return False
 
         blob = bucket.new_key(self.make_remote_key())
@@ -555,7 +557,7 @@ class Terrarium(object):
         except Exception:
             attempts = attempts + 1
             logger.warning('There was an error uploading the file')
-            if attemps > self.args.gcs_max_retries:
+            if attempts > self.args.gcs_max_retries:
                 logger.error(
                     'Attempted to upload archive to Google Cloud Storage, but failed'
                 )

@@ -12,6 +12,7 @@ import sys
 
 
 class TerrariumTester(unittest.TestCase):
+
     def setUp(self):
         _, requirements = tempfile.mkstemp(prefix='test_terrarium_req-')
         target = tempfile.mkdtemp(prefix='test_terrarium_target-')
@@ -210,6 +211,7 @@ class TerrariumTester(unittest.TestCase):
 
 
 class TestTerrarium(TerrariumTester):
+
     def test_no_params(self):
         output, return_code = self._terrarium()
         self.assertEqual(return_code, 2)

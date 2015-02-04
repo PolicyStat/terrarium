@@ -466,7 +466,8 @@ class Terrarium(object):
         if gcs and self.args.gcs_bucket:
             bucket = self._get_gcs_bucket()
             if bucket:
-                # blob is the same concept of S3's object on Google Cloud Storage
+                # blob is the same concept of S3's object on
+                # Google Cloud Storage
                 blob = bucket.get_key(remote_key)
                 if blob:
                     logger.info(
@@ -559,7 +560,8 @@ class Terrarium(object):
             logger.warning('There was an error uploading the file')
             if attempts > self.args.gcs_max_retries:
                 logger.error(
-                    'Attempted to upload archive to Google Cloud Storage, but failed'
+                    'Attempted to upload archive to Google Cloud Storage, '
+                    'but failed'
                 )
                 raise
             else:
@@ -847,28 +849,32 @@ def parse_args():
         '--gcs-bucket',
         default=os.environ.get('GCS_BUCKET', None),
         help='''
-            Google Cloud Storage bucket name. Defaults to GCS_BUCKET env variable.
+            Google Cloud Storage bucket name.
+            Defaults to GCS_BUCKET env variable.
         '''
     )
     ap.add_argument(
         '--gcs-project',
         default=os.environ.get('GCS_PROJECT', None),
         help='''
-            Google Cloud Storage project. Defaults to GCS_PROJECT env variable.
+            Google Cloud Storage project.
+            Defaults to GCS_PROJECT env variable.
         '''
     )
     ap.add_argument(
         '--gcs-client-email',
         default=os.environ.get('GCS_CLINET_EMAIL', None),
         help='''
-            Google Cloud Storage client email. Defaults to GCS_CLIENT_EMAIL env variable.
+            Google Cloud Storage client email.
+            Defaults to GCS_CLIENT_EMAIL env variable.
         '''
     )
     ap.add_argument(
         '--gcs-private-key',
         default=os.environ.get('GCS_PRIVATE_KEY', None),
         help='''
-            Google Cloud Storage private key. Defaults to GCS_PRIVATE_KEY env variable.
+            Google Cloud Storage private key.
+            Defaults to GCS_PRIVATE_KEY env variable.
         '''
     )
     ap.add_argument(

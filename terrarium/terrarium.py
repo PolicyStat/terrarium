@@ -863,7 +863,7 @@ def parse_args():
     )
     ap.add_argument(
         '--gcs-client-email',
-        default=os.environ.get('GCS_CLINET_EMAIL', None),
+        default=os.environ.get('GCS_CLIENT_EMAIL', None),
         help='''
             Google Cloud Storage client email.
             Defaults to GCS_CLIENT_EMAIL env variable.

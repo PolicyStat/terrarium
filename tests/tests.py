@@ -529,6 +529,19 @@ class TestTerrarium(TerrariumTester):
             in output[1]
         )
 
+    def test_gcs_required_to_use_gcs_bucket(self):
+        self._add_test_requirement()
+
+        output = self.assertInstall(
+            return_code=2,
+            gcs_bucket='bucket',
+        )
+        self.assertTrue(
+            'error: --gcs-bucket requires that you have gcloud installed, '
+            'which does not appear to be the case'
+            in output[1]
+        )
+
     def test_sensitive_arguments_are_sensitive(self):
         command = 'hash %s' % (
             self.requirements,

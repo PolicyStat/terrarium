@@ -1,3 +1,7 @@
+**dev**
+
+- `Support for Google Cloud Storage, in addition to Amazon S3 <https://github.com/PolicyStat/terrarium/pull/53>`_
+
 **1.0.0-rc.6**
 
 - `shlex comments=True breaks remote source requirements <https://github.com/PolicyStat/terrarium/pull/52>`_

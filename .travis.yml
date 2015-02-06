@@ -1,6 +1,15 @@
 language: python
 install: pip install tox
-script: tox -v
+env:
+  - TOX_ENV=docs
+  - TOX_ENV=pep8
+  - TOX_ENV=py26-venv-1.7.2
+  - TOX_ENV=py26-venv-1.8.4
+  - TOX_ENV=py26-venv-1.9.1
+  - TOX_ENV=py27-venv-1.7.2
+  - TOX_ENV=py27-venv-1.8.4
+  - TOX_ENV=py27-venv-1.9.1
+script: tox -e $TOX_ENV
 notifications:
   email:
     - kyle.gibson@frozenonline.com

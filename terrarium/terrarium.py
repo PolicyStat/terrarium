@@ -20,6 +20,12 @@ try:
 except ImportError:
     boto = None  # noqa
 
+# import google cloud storage lib
+try:
+    import gcloud.storage as gcs
+except ImportError:
+    gcs = None
+
 from virtualenv import (  # noqa
     call_subprocess,
     create_bootstrap_script,
@@ -38,6 +44,7 @@ MAGIC_NUM = {
 
 
 class Namespace(argparse._AttributeHolder):
+
     def __init__(self):
         super(Namespace, self).__init__()
         self._sensitive_arguments = set()
@@ -99,6 +106,7 @@ def get_type(path):
 
 
 class Terrarium(object):
+
     def __init__(self, args):
         self.args = args
         self._requirements = None
@@ -393,6 +401,25 @@ class Terrarium(object):
             pass
         return boto.s3.bucket.Bucket(conn, name=self.args.s3_bucket)
 
+    def _get_gcs_bucket(self):
+        if not gcs:
+            return None
+
+        conn = gcs.get_connection(
+            self.args.gcs_project,
+            self.args.gcs_client_email,
+            self.args.gcs_private_key
+        )
+
+        # try to make a new one, or pass if existed
+        try:
+            bucket = conn.create_bucket(self.args.gcs_bucket)
+            bucket.make_public(recursive=True, future=True)
+        except Exception:
+            pass
+
+        return conn.get_bucket(self.args.gcs_bucket)
+
     def download(self, target):
         if self.args.storage_dir:
             remote_archive = os.path.join(
@@ -413,10 +440,14 @@ class Terrarium(object):
                 os.unlink(local_archive)
                 return True
             logger.error('Download archive failed')
+
+        # make remote key for extenal storage system
+        remote_key = self.make_remote_key()
+
+        # store to S3 if boto enabled and arguments set
         if boto and self.args.s3_bucket:
             bucket = self._get_s3_bucket()
             if bucket:
-                remote_key = self.make_remote_key()
                 key = bucket.get_key(remote_key)
                 if key:
                     logger.info(
@@ -426,6 +457,26 @@ class Terrarium(object):
                     )
                     fd, archive = tempfile.mkstemp()
                     key.get_contents_to_filename(archive)
+                    self.extract(archive, target)
+                    os.close(fd)
+                    os.unlink(archive)
+                    return True
+
+        # download from Google Cloud Storage if gcs enabled and arguments set
+        if gcs and self.args.gcs_bucket:
+            bucket = self._get_gcs_bucket()
+            if bucket:
+                # blob is the same concept of S3's object on
+                # Google Cloud Storage
+                blob = bucket.get_key(remote_key)
+                if blob:
+                    logger.info(
+                        'Downloading %s/%s from Google Cloud Storage '
+                        '(this may take time) ...'
+                        % (self.args.gcs_bucket, remote_key)
+                    )
+                    fd, archive = tempfile.mkstemp()
+                    blob.download_to_file(archive)
                     self.extract(archive, target)
                     os.close(fd)
                     os.unlink(archive)
@@ -487,6 +538,35 @@ class Terrarium(object):
             else:
                 logger.info('Retrying S3 upload')
 
+    def upload_to_gcs(self, target):
+        logger.info('Uploading environment to Google Cloud Storage')
+        attempts = 0
+        bucket = self._get_gcs_bucket()
+        if not bucket:
+            return False
+
+        blob = bucket.new_key(self.make_remote_key())
+        archive = self.archive(target)
+        if not archive:
+            logger.error('Archiving failed')
+
+        try:
+            blob.upload_from_filename(archive)
+            logger.debug('upload finished')
+            os.unlink(archive)
+            return True
+        except Exception:
+            attempts = attempts + 1
+            logger.warning('There was an error uploading the file')
+            if attempts > self.args.gcs_max_retries:
+                logger.error(
+                    'Attempted to upload archive to Google Cloud Storage, '
+                    'but failed'
+                )
+                raise
+            else:
+                logger.info('Retrying Google Cloud Storage upload')
+
     def upload(self, target):
         if self.args.storage_dir:
             self.upload_to_storage_dir(
@@ -495,6 +575,8 @@ class Terrarium(object):
             )
         if boto and self.args.s3_bucket:
             self.upload_to_s3(target)
+        if gcs and self.args.gcs_bucket:
+            self.upload_to_gcs(target)
 
     def create_bootstrap(self, dest):
         extra_text = (
@@ -582,6 +664,8 @@ def parse_args():
     sensitive_arguments = [
         's3_access_key',
         's3_secret_key',
+        'gcs_client_email',
+        'gcs_private_key',
     ]
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -760,6 +844,48 @@ def parse_args():
         ''',
     )
 
+    # gcs relavent arguments
+    ap.add_argument(
+        '--gcs-bucket',
+        default=os.environ.get('GCS_BUCKET', None),
+        help='''
+            Google Cloud Storage bucket name.
+            Defaults to GCS_BUCKET env variable.
+        '''
+    )
+    ap.add_argument(
+        '--gcs-project',
+        default=os.environ.get('GCS_PROJECT', None),
+        help='''
+            Google Cloud Storage project.
+            Defaults to GCS_PROJECT env variable.
+        '''
+    )
+    ap.add_argument(
+        '--gcs-client-email',
+        default=os.environ.get('GCS_CLIENT_EMAIL', None),
+        help='''
+            Google Cloud Storage client email.
+            Defaults to GCS_CLIENT_EMAIL env variable.
+        '''
+    )
+    ap.add_argument(
+        '--gcs-private-key',
+        default=os.environ.get('GCS_PRIVATE_KEY', None),
+        help='''
+            Google Cloud Storage private key.
+            Defaults to GCS_PRIVATE_KEY env variable.
+        '''
+    )
+    ap.add_argument(
+        '--gcs-max-retries',
+        default=os.environ.get('GCS_MAX_RETRIES', 3),
+        help='''
+            Number of times to attempt a GCS operation before giving up.
+            Default is 3.
+        '''
+    )
+
     subparsers = ap.add_subparsers(
         title='Basic Commands',
         dest='command',
@@ -797,6 +923,12 @@ def parse_args():
     if not boto and args.s3_bucket is not None:
         ap.error(
             '--s3-bucket requires that you have boto installed, '
+            'which does not appear to be the case'
+        )
+
+    if not gcs and args.gcs_bucket is not None:
+        ap.error(
+            '--gcs-bucket requires that you have gcloud installed, '
             'which does not appear to be the case'
         )
 

@@ -33,10 +33,17 @@ terrarium will archive and compress the environment.
 Finally,
 the compressed version is then copied to the path specified by ``--storage-dir``.
 
-Storing terrarium environments on S3
-====================================
+Storing terrarium environments on Cloud Storage Services (S3, GCS)
+==================================================================
 
-Terrarium also supports storing and retrieving archives stored on Amazon S3.
+Terrarium also supports storing and retrieving archives stored on these storage services:
+
+  * Amazon Web Service - S3
+  * Google Cloud Platform - Google Cloud Storage
+
+Amazon S3
+---------
+
 The following options are only available if ``boto`` is installed.
 
   * ``--s3-bucket``
@@ -44,9 +51,19 @@ The following options are only available if ``boto`` is installed.
   * ``--s3-secret-key``
   * ``--s3-max-retries``
 
+Google Cloud Storage
+--------------------
+
+The following options are only available if ``gcloud`` is installed.
+
+  * ``--gcs-bucket``
+  * ``--gcs-client-email``
+  * ``--gcs-secret-key``
+  * ``--gcs-max-retries``
+
 .. note::
     Each of the above options can be specified using environment variables,
-    e.g. ``S3_BUCKET``
+    e.g. ``S3_BUCKET``, ``GCS_BUCKET``
     instead of being passed in as a parameter.
 
 Tips

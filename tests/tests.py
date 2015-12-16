@@ -257,6 +257,25 @@ class TestTerrarium(TerrariumTester):
         expected = ['test_requirement']
         self.assertEqual(actual, expected)
 
+    def test_install_requirements_with_dependency(self):
+        """ This test involves a requirements file with two items,
+            test_requirement and foo_requirement. foo_requirement
+            has test_requirement as a dependency. We check that,
+            if test_requirement comes first in the requirements,
+            the install of foo_requirement will be successful.
+        """
+        self._add_requirements(
+            self._get_path('fixtures', 'test_requirement'),
+            self._get_path('fixtures', 'foo_requirement'),
+        )
+        self.assertInstall()
+        actual = self._can_import_requirements(
+            'test_requirement',
+            'foo_requirement',
+        )
+        expected = ['test_requirement', 'foo_requirement']
+        self.assertEqual(actual, expected)
+
     def test_install_with_requirement_comments(self):
         # Verify that a requirement file with comment lines can be used.
         self._add_requirements(

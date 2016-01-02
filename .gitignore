@@ -27,3 +27,4 @@ pip-log.txt
 .mr.developer.cfg
 
 docs/_build
+/venv/

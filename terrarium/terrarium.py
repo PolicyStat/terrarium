@@ -133,7 +133,7 @@ class Terrarium(object):
                         line = line.strip()
                         if line and not line.startswith('#'):
                             lines.append(line)
-        self._requirements = sorted(lines)
+        self._requirements = lines
         return self._requirements
 
     def restore_previously_backed_up_environment(self):

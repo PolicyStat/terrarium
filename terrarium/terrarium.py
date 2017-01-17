@@ -958,5 +958,6 @@ def main():
         r = terrarium.restore_previously_backed_up_environment()
     sys.exit(r)
 
+
 if __name__ == '__main__':
     main()

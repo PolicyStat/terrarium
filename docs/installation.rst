@@ -7,8 +7,8 @@ Requirements
 
 * CPython 2.7 or 2.6
 * `virtualenv <https://virtualenv.pypa.io/en/stable/>`_
-  (only the latest 3 versions are officially supported and tested)
-  15.1.x, 15.0.x, 14.0.x
+  (only the latest 2 versions are officially supported and tested)
+  15.1.x, 15.0.x
 
 .. note::
 

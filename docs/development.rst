@@ -103,7 +103,7 @@ The terrarium project welcomes help in any of the following ways:
   tests and documentation.
 * Participating on open issues and pull requests,
   reviewing changes
-  
+
 Pull Request Checklist
 ======================
 

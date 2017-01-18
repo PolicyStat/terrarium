@@ -3,12 +3,12 @@ install: pip install tox
 env:
   - TOX_ENV=docs
   - TOX_ENV=pep8
-  - TOX_ENV=py26-venv-1.7.2
-  - TOX_ENV=py26-venv-1.8.4
-  - TOX_ENV=py26-venv-1.9.1
-  - TOX_ENV=py27-venv-1.7.2
-  - TOX_ENV=py27-venv-1.8.4
-  - TOX_ENV=py27-venv-1.9.1
+  - TOX_ENV=py26-14.0.6
+  - TOX_ENV=py26-15.0.3
+  - TOX_ENV=py26-15.1.0
+  - TOX_ENV=py27-14.0.6
+  - TOX_ENV=py27-15.0.3
+  - TOX_ENV=py27-15.1.0
 script: tox -e $TOX_ENV
 notifications:
   email:

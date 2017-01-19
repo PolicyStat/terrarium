@@ -1,6 +1,18 @@
 language: python
-install: pip install tox-travis
-script: tox
+env:
+  - TOX_ENV=docs
+  - TOX_ENV=py27-flake8
+  - TOX_ENV=py26-virtualenv-17x
+  - TOX_ENV=py26-virtualenv-18x
+  - TOX_ENV=py26-virtualenv-19x
+  - TOX_ENV=py26-virtualenv-150x
+  - TOX_ENV=py26-virtualenv-151x
+  - TOX_ENV=py27-virtualenv-17x
+  - TOX_ENV=py27-virtualenv-18x
+  - TOX_ENV=py27-virtualenv-19x
+  - TOX_ENV=py27-virtualenv-150x
+  - TOX_ENV=py27-virtualenv-151x
+script: tox -e $TOX_ENV
 notifications:
   email:
     - kyle.gibson@frozenonline.com

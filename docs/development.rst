@@ -88,7 +88,10 @@ Setting up tox
 Running tox
 -----------
 
-Now that you have ``tox`` setup, you just need to run the command ``tox`` from the project root directory.
+Now that you have ``tox`` setup,
+you just need to run
+the command ``tox``
+from the project root directory.
 
 .. code-block:: shell-session
 
@@ -103,7 +106,7 @@ The terrarium project welcomes help in any of the following ways:
   tests and documentation.
 * Participating on open issues and pull requests,
   reviewing changes
-  
+
 Pull Request Checklist
 ======================
 

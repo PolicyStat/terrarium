@@ -1,3 +1,7 @@
+**1.0.1**
+
+- `Support latest 2 versions of virtualenv <https://github.com/PolicyStat/terrarium/pull/61>`_
+
 **1.0.0**
 
 - `Support for Google Cloud Storage, in addition to Amazon S3 <https://github.com/PolicyStat/terrarium/pull/53>`_

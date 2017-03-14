@@ -506,9 +506,12 @@ class Terrarium(object):
             archive = self.archive(target)
             if not archive:
                 logger.error('Archiving failed')
-            shutil.copyfile(archive, dest)
+            _, temp = tempfile.mkstemp(dir=storage_dir)
+            shutil.copyfile(archive, temp)
+            os.rename(temp, dest)
             logger.info('Archive copied to storage directory')
             os.unlink(archive)
+            os.unlink(temp)
 
     def upload_to_s3(self, target):
         logger.info('Uploading environment to S3')

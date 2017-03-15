@@ -511,7 +511,6 @@ class Terrarium(object):
             os.rename(temp, dest)
             logger.info('Archive copied to storage directory')
             os.unlink(archive)
-            os.unlink(temp)
 
     def upload_to_s3(self, target):
         logger.info('Uploading environment to S3')

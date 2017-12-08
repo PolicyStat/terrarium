@@ -9,6 +9,7 @@ import os
 import platform
 import copy
 import sys
+import virtualenv
 
 
 class TerrariumTester(unittest.TestCase):
@@ -59,6 +60,19 @@ class TerrariumTester(unittest.TestCase):
     @property
     def opts(self):
         return self.config['opts']
+
+    @property
+    def virtualenv_version_tuple(self):
+        parts = virtualenv.virtualenv_version.split('.')
+        return tuple([int(v) for v in parts])
+
+    def is_python_version_available(self, executable):
+        try:
+            result = subprocess.call(
+                [executable, '--version'], stdout=subprocess.PIPE)
+            return result == 0
+        except OSError:
+            return False
 
     def config_pop(self):
         return self.configs.pop()
@@ -175,7 +189,6 @@ class TerrariumTester(unittest.TestCase):
         self._add_requirements(test_requirement)
 
     def _add_terrarium_requirement(self):
-        import virtualenv
         self._add_requirements(
             self._get_path_terrarium(),
             'virtualenv==%s' % virtualenv.virtualenv_version
@@ -622,3 +635,25 @@ class TestTerrarium(TerrariumTester):
             'Refusing to build a new bundle.\n',
         )
         self.assertNotExists(self.python)
+
+    def test_install_with_python3_executable(self):
+        skip = None
+        if not self.is_python_version_available('python3.6'):
+            skip = 'python3.6 not installed'
+        if self.virtualenv_version_tuple < (15, 0):
+            skip = 'py3 not supported with this virtualenv version'
+
+        if skip:
+            if hasattr(unittest, 'SkipTest'):
+                raise unittest.SkipTest(skip)
+            else:
+                # SkipTest not supported in Python 2.6
+                print(skip)
+                return
+
+        self.assertInstall(
+            storage_dir=self.storage_dir, python_executable='python3.6')
+        self.assertTrue(os.path.join(self.target, 'bin', 'python3.6'))
+        self.assertEqual(
+            os.readlink(os.path.join(self.target, 'bin', 'python')),
+            'python3.6')

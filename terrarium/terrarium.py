@@ -8,6 +8,7 @@ import sys
 import tempfile
 import shutil
 import logging
+import subprocess
 
 from logging import getLogger, StreamHandler
 
@@ -162,6 +163,17 @@ class Terrarium(object):
             target = self.get_target_location()
         return ''.join([target, self.args.backup_suffix])
 
+    def get_wheel_search_dir(self):
+        import virtualenv
+        path = os.path.join(os.path.dirname(virtualenv.__file__),
+                            'virtualenv_support')
+        if not os.path.exists(path):
+            raise RuntimeError(
+                ('{0}: virtualenv wheel dir not found, '
+                 'check your virtualenv installation'
+                 .format(path)))
+        return path
+
     def environment_exists(self, env):
         return os.path.exists(os.path.join(
             env,
@@ -209,12 +221,24 @@ class Terrarium(object):
 
             # Run the bootstrap script which pip installs everything that has
             # been defined as a requirement
-            call_subprocess([
+            args = [
                 sys.executable,
                 bootstrap,
                 '--prompt=(%s)' % prompt,
                 new_target
-            ])
+            ]
+            if self.args.python_executable:
+                # Pass explicit python version to bootstrap script and
+                # set wheel path from 2.7 virtualenv. Wheels bundled
+                # with virtualenv are universal and work with any
+                # version of Python. The benefit of doing it is that
+                # user doesn't have to install python3-virtualenv just
+                # for wheel files.
+                args += [
+                    '-p', self.args.python_executable,
+                    '--extra-search-dir', self.get_wheel_search_dir(),
+                ]
+            call_subprocess(args)
 
             # Do we want to copy the bootstrap into the environment for future
             # use?
@@ -482,9 +506,24 @@ class Terrarium(object):
                     os.unlink(archive)
                     return True
 
+    def get_version_tuple_from_executable(self, executable):
+        cmd = [executable, '--version']
+        pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        out, _ = pipe.communicate()
+        if pipe.returncode != 0:
+            raise OSError('Command {0} failed with error code {1}'
+                          .format(cmd, pipe.returncode))
+        # out: Python 3.6.3
+        version = out.strip().split()[1]
+        return version.split('.')
+
     def make_remote_key(self):
         import platform
-        major, minor, patch = platform.python_version_tuple()
+        if self.args.python_executable:
+            major, minor, patch = self.get_version_tuple_from_executable(
+                self.args.python_executable)
+        else:
+            major, minor, patch = platform.python_version_tuple()
         context = {
             'digest': self.digest,
             'python_vmajor': major,
@@ -627,7 +666,7 @@ def after_install(options, base):
 
     # Activate the virtualenv
     activate_this = join(bin_dir, 'activate_this.py')
-    execfile(activate_this, dict(__file__=activate_this))
+    exec(open(activate_this).read(), dict(__file__=activate_this))
 
     import pip
     try:
@@ -709,6 +748,11 @@ def parse_args():
             already within a virtual environment, this option defaults to
             VIRTUAL_ENV.
         ''',
+    )
+    ap.add_argument(
+        '-p', '--python-executable',
+        default='',
+        help='Python executable to use in virtualenv, eg. python3.6',
     )
     ap.add_argument(
         '--pip-log-level',

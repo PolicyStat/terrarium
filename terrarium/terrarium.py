@@ -309,6 +309,8 @@ class Terrarium(object):
         for name in os.listdir(location):
             full_path = os.path.join(location, name)
             data = None
+            if not os.path.isfile(full_path):
+                continue
             with open(full_path) as f:
                 header = f.read(len(MAGIC_NUM['ELF']))
                 # Skip binary files

@@ -510,11 +510,12 @@ class Terrarium(object):
 
     def get_version_tuple_from_executable(self, executable):
         cmd = [executable, '--version']
-        pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        # py3 prints to stdout, py2 to stderr
+        pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, _ = pipe.communicate()
         if pipe.returncode != 0:
-            raise OSError('Command {0} failed with error code {1}'
-                          .format(cmd, pipe.returncode))
+            raise OSError('Command {0} failed with error code {1}, output: {2}'
+                          .format(cmd, pipe.returncode, out))
         # out: Python 3.6.3
         version = out.strip().split()[1]
         return version.split('.')

@@ -2,7 +2,7 @@
 Terrarium
 #########
 
-.. image:: https://pypip.in/v/terrarium/badge.png
+.. image:: https://img.shields.io/pypi/v/terrarium.svg
    :target: https://crate.io/packages/terrarium
 
 .. image:: https://secure.travis-ci.org/PolicyStat/terrarium.png?branch=master

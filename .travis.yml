@@ -13,6 +13,7 @@ env:
   - TOX_ENV=py27-virtualenv-19x
   - TOX_ENV=py27-virtualenv-150x
   - TOX_ENV=py27-virtualenv-151x
+  - TOX_ENV=test_build
 script: tox -e $TOX_ENV
 notifications:
   email:

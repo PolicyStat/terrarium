@@ -1,3 +1,10 @@
+**1.1.0**
+
+- `Droped support for virtualenv<15 <https://github.com/PolicyStat/terrarium/pull/66>`_
+- `Droped support for python 2.6 <https://github.com/PolicyStat/terrarium/pull/66>`_
+- `Added support for pip>=10 <https://github.com/PolicyStat/terrarium/pull/66>`_
+- `Added support for latest version of virtualenv <https://github.com/PolicyStat/terrarium/pull/66>`_
+
 **1.0.1**
 
 - `Support latest 2 versions of virtualenv <https://github.com/PolicyStat/terrarium/pull/61>`_

@@ -630,10 +630,16 @@ def after_install(options, base):
     execfile(activate_this, dict(__file__=activate_this))
 
     import pip
-    from pip.commands.install import InstallCommand
+    try:
+        from pip.commands.install import InstallCommand
+    except ImportError:  # Pip >= 10
+        from pip._internal.commands.install import InstallCommand
 
     # Debug logging for pip
-    pip.logger.consumers = [({virtualenv_log_level}, sys.stdout)]
+    if hasattr(pip, '_internal'):
+        pip._internal.logger.consumers = [({virtualenv_log_level}, sys.stdout)]
+    else:
+        pip.logger.consumers = [({virtualenv_log_level}, sys.stdout)]
 
     # If we are on a version of pip before 1.2, load version control modules
     # for installing 'editables'
@@ -644,7 +650,10 @@ def after_install(options, base):
     try:
         c = InstallCommand()
     except TypeError:
-        from pip.baseparser import create_main_parser
+        try:
+            from pip.baseparser import create_main_parser
+        except ImportError:  # Pip >= 10
+            from pip._internal.baseparser import create_main_parser
         main_parser = create_main_parser()
         c = InstallCommand(main_parser)
 

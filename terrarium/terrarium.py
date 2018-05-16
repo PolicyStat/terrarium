@@ -511,7 +511,8 @@ class Terrarium(object):
     def get_version_tuple_from_executable(self, executable):
         cmd = [executable, '--version']
         # py3 prints to stdout, py2 to stderr
-        pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        pipe = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, _ = pipe.communicate()
         if pipe.returncode != 0:
             raise OSError('Command {0} failed with error code {1}, output: {2}'

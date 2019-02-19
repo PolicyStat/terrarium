@@ -1,3 +1,6 @@
+build
+dist
+terrarium.egg-info
 *.pyc
 .direnv
 .env

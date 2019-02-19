@@ -3,9 +3,8 @@ install: pip install tox
 env:
   - TOX_ENV=docs
   - TOX_ENV=py27-flake8
-  - TOX_ENV=py27-virtualenv-150x
-  - TOX_ENV=py27-virtualenv-151x
-  - TOX_ENV=py27-virtualenv-152x
+  - TOX_ENV=py27-virtualenv-latest
+  - TOX_ENV=py27-virtualenv-previous
 script: tox -e $TOX_ENV
 notifications:
   email:

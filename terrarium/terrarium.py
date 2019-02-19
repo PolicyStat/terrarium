@@ -101,7 +101,7 @@ def get_type(path):
         for file_type, magic in MAGIC_NUM.items():
             f.seek(magic[1])
             if magic[0] == f.read(len(magic[0])):
-                    return file_type
+                return file_type
     return None
 
 

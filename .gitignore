@@ -4,3 +4,4 @@ terrarium.egg-info
 *.pyc
 .direnv
 .env
+.tox

@@ -1,14 +1,15 @@
 from __future__ import absolute_import
 
-import unittest
-import subprocess
-import shlex
-import tempfile
-import shutil
+import copy
+import hashlib
 import os
 import platform
-import copy
+import shlex
+import shutil
+import subprocess
 import sys
+import tempfile
+import unittest
 
 
 class TerrariumTester(unittest.TestCase):
@@ -97,8 +98,8 @@ class TerrariumTester(unittest.TestCase):
         sys.stdout.write('Executing "%s"\n' % command)
         params = shlex.split(command)
         result = subprocess.Popen(params, **kwargs)
-        output = result.communicate()
-        return output, result.returncode
+        stdout, stderr = result.communicate()
+        return (stdout, stderr), result.returncode
 
     def _get_path(self, *paths):
         paths = list(paths)
@@ -160,9 +161,10 @@ class TerrariumTester(unittest.TestCase):
         command = 'key %s' % (
             self.requirements,
         )
-        output, return_code = self._terrarium(command)
+        (stdout, stderr), return_code = self._terrarium(command)
         self.assertEqual(return_code, 0)
-        requirements_key = output[0].strip()
+        self.assertEqual(stderr, '')
+        requirements_key = stdout.strip()
         return requirements_key
 
     def _add_requirements(self, *requirements):
@@ -197,11 +199,15 @@ class TerrariumTester(unittest.TestCase):
 
     def assertInstall(self, *args, **kwargs):
         expected_return_code = kwargs.pop('return_code', 0)
-        output, return_code = self._install(*args, **kwargs)
+        (stdout, stderr), return_code = self._install(*args, **kwargs)
         # Print output so it is displayed in the event of an error
-        sys.stdout.write('\n'.join(output))
+        sys.stdout.write('\n---------- stdout ----------\n')
+        sys.stdout.write(stdout)
+        sys.stdout.write('\n---------- stderr ----------\n')
+        sys.stdout.write(stderr)
+        sys.stdout.write('\n---------- ------ ----------\n')
         self.assertEqual(return_code, expected_return_code)
-        return output
+        return stdout, stderr
 
     def assertExists(self, path):
         self.assertTrue(os.path.exists(path))
@@ -213,8 +219,10 @@ class TerrariumTester(unittest.TestCase):
 class TestTerrarium(TerrariumTester):
 
     def test_no_params(self):
-        output, return_code = self._terrarium()
+        (stdout, stderr), return_code = self._terrarium()
         self.assertEqual(return_code, 2)
+        self.assertNotEqual(stderr, '')
+        self.assertEqual(stdout, '')
 
     def test_help(self):
         output, return_code = self._terrarium('-h')
@@ -242,7 +250,7 @@ class TestTerrarium(TerrariumTester):
 
         # Check for terrarium bootstrap script
         self.assertExists(
-            os.path.join(self.target, 'bin', 'terrarium_bootstrap.py')
+            os.path.join(self.target, 'requirements.txt')
         )
 
     def test_install_with_requirement(self):
@@ -258,12 +266,11 @@ class TestTerrarium(TerrariumTester):
         self.assertEqual(actual, expected)
 
     def test_install_requirements_with_dependency(self):
-        """ This test involves a requirements file with two items,
-            test_requirement and foo_requirement. foo_requirement
-            has test_requirement as a dependency. We check that,
-            if test_requirement comes first in the requirements,
-            the install of foo_requirement will be successful.
-        """
+        # This test involves a requirements file with two items,
+        # test_requirement and foo_requirement. foo_requirement has
+        # test_requirement as a dependency. We check that, if test_requirement
+        # comes first in the requirements, the install of foo_requirement will
+        # be successful.
         self._add_requirements(
             self._get_path('fixtures', 'test_requirement'),
             self._get_path('fixtures', 'foo_requirement'),
@@ -308,12 +315,11 @@ class TestTerrarium(TerrariumTester):
         command = 'hash %s' % (
             self.requirements,
         )
-        output, return_code = self._terrarium(command)
+        (stdout, stderr), return_code = self._terrarium(command)
+        expected_digest = hashlib.md5('').hexdigest()
         self.assertEqual(return_code, 0)
-        self.assertEqual(
-            output[0].strip(),
-            'd41d8cd98f00b204e9800998ecf8427e',
-        )
+        self.assertEqual(stdout.strip(), expected_digest)
+        self.assertEqual(stderr, '')
 
     def test_install_replace_backup_exists(self):
         # Verify that a backup of the old environment is created when replacing
@@ -441,12 +447,13 @@ class TestTerrarium(TerrariumTester):
 
         # Now attempt to install from the archive
         self._add_test_requirement()
-        output = self.assertInstall(
+        stdout, stderr = self.assertInstall(
             no_backup=True,
             storage_dir=self.storage_dir,
+            verbose=True,
         )
-        self.assertEqual(output[0], '')
-        self.assertTrue('Extracting terrarium bundle' in output[1])
+        self.assertNotEqual(stdout, '')
+        self.assertEqual(stderr, '')
 
         actual = self._can_import_requirements(
             'test_requirement',  # Should exist now
@@ -512,6 +519,7 @@ class TestTerrarium(TerrariumTester):
             'bin',
             'terrarium',
         )
+        config['opts'] = '-vv'
 
         self.assertInstall(
             no_backup=True,
@@ -519,69 +527,70 @@ class TestTerrarium(TerrariumTester):
         )
         self.assertExists(self.python)
 
-    def test_logging_output(self):
+    def test_logging_output_default(self):
         self._add_test_requirement()
         self._add_terrarium_requirement()
 
-        config = self.config_push()
-        config['opts'] = ''
+        stdout, stderr = self.assertInstall()
 
-        output = self.assertInstall()
+        self.assertEqual('', stdout)
+        self.assertEqual('', stderr)
 
-        self.assertNotEqual('', output[0])
-        self.assertEqual(output[1], (
-            'Building new environment\n'
-            'Copying bootstrap script to new environment\n'
-            'Terrarium is finished\n'
-        ))
+    def test_logging_output_verbose(self):
+        self._add_test_requirement()
+        self._add_terrarium_requirement()
+
+        stdout, stderr = self.assertInstall(verbose=True)
+
+        self.assertNotEqual('', stdout)
+        self.assertEqual('', stderr)
 
     def test_boto_required_to_use_s3_bucket(self):
         self._add_test_requirement()
 
-        output = self.assertInstall(
+        stdout, stderr = self.assertInstall(
             return_code=2,
             s3_bucket='bucket',
         )
         self.assertTrue(
             'error: --s3-bucket requires that you have boto installed, '
             'which does not appear to be the case'
-            in output[1]
+            in stderr
         )
 
     def test_gcs_required_to_use_gcs_bucket(self):
         self._add_test_requirement()
 
-        output = self.assertInstall(
+        stdout, stderr = self.assertInstall(
             return_code=2,
             gcs_bucket='bucket',
         )
+        self.assertEqual('', stdout)
         self.assertTrue(
             'error: --gcs-bucket requires that you have gcloud installed, '
             'which does not appear to be the case'
-            in output[1]
+            in stderr
         )
 
     def test_sensitive_arguments_are_sensitive(self):
         command = 'hash %s' % (
             self.requirements,
         )
-        output, return_code = self._terrarium(
+        self.config['opts'] = '-vv'
+        (stdout, stderr), return_code = self._terrarium(
             command,
-            verbose=True,
             s3_secret_key='should_not_appear',
             s3_access_key='do_not_show_me',
         )
+        self.assertEqual('', stderr)
         self.assertEqual(return_code, 0)
         self.assertTrue(
-            output[1].startswith('Initialized with Namespace')
+            stdout.startswith('[DEBUG] Initialized with Namespace')
         )
-        self.assertTrue(
-            'should_not_appear' not in output[1]
-        )
-
-        self.assertTrue(
-            'do_not_show_me' not in output[1]
-        )
+        self.assertTrue('s3_secret_key' in stdout)
+        self.assertTrue('s3_access_key' in stdout)
+        self.assertTrue('should_not_appear' not in stdout)
+        self.assertTrue('do_not_show_me' not in stdout)
 
     def test_restore_previously_backed_up_environment(self):
         output, return_code = self._terrarium(
@@ -610,15 +619,15 @@ class TestTerrarium(TerrariumTester):
     def test_require_download(self):
         self._add_test_requirement()
 
-        output = self.assertInstall(
+        stdout, stderr = self.assertInstall(
             return_code=1,
             storage_dir=self.storage_dir,
             require_download=True,
         )
+        self.assertEqual('', stderr)
         self.assertEqual(
-            output[1],
-            'Download archive failed\n'
-            'Failed to download bundle and download is required. '
-            'Refusing to build a new bundle.\n',
+            stdout.strip(),
+            '[ERROR] Failed to download environment and download is required. '
+            'Refusing to build a new environment.',
         )
         self.assertNotExists(self.python)

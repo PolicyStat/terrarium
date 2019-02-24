@@ -524,6 +524,7 @@ def get_displayable_args(args):
 
 def parse_args(ap):
     args = ap.parse_args()
+    assert args.__class__._get_kwargs
     args.__class__._get_kwargs = get_displayable_args
 
     if not boto and args.s3_bucket is not None:

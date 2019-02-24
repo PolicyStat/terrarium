@@ -10,8 +10,6 @@ import subprocess
 import sys
 import tempfile
 
-from logging import getLogger, StreamHandler
-
 try:
     import boto  # noqa
     import boto.s3.connection
@@ -26,7 +24,16 @@ except ImportError:
     gcs = None
 
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
+
+
+PYTHONWARNINGS_IGNORE_PIP_PYTHON2_DEPRECATION = (
+    'ignore:DEPRECATION::pip._internal.cli.base_command'
+)
+
+PYTHONWARNINGS = [
+    PYTHONWARNINGS_IGNORE_PIP_PYTHON2_DEPRECATION,
+]
 
 
 class Terrarium(object):
@@ -286,19 +293,17 @@ def define_args():
     )
     ap.add_argument(
         '-v', '--verbose',
-        action='append_const',
-        const=-10,
-        default=[logging.INFO],
-        dest='v',
-        help='Increase verbosity',
+        action='count',
+        default=0,
+        dest='verbose_count',
+        help='Increase verbosity. Default shows only warnings and errors.',
     )
     ap.add_argument(
         '-q', '--quiet',
-        action='append_const',
-        const=10,
-        default=[logging.INFO],
-        dest='v',
-        help='Decrease verbosity',
+        action='store_true',
+        default=False,
+        dest='quiet',
+        help='Silence output completely',
     )
     ap.add_argument(
         '-t', '--target',
@@ -737,17 +742,27 @@ def make_temp_file(**kwargs):
 
 
 def initialize_logging(args):
-    log_level = max(logging.DEBUG, sum(args.v))
-    logger.setLevel(log_level)
-    logger.addHandler(StreamHandler())
+    if args.quiet:
+        logger.disabled = True
+    else:
+        level = logging.WARNING
+        level -= args.verbose_count * 10
+        level = max(level, logging.DEBUG)
+        logger.setLevel(level)
 
 
 def main():
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.DEBUG,
+        format='[%(levelname)s] %(message)s',
+    )
+
     ap = define_args()
     args = parse_args(ap)
-
     initialize_logging(args)
-    logger.debug(args)
+
+    logger.debug('Initialized with %s', args)
 
     terrarium = Terrarium(args)
 

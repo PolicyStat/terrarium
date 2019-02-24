@@ -541,20 +541,28 @@ def parse_args(ap):
     return args
 
 
-def call_subprocess(command):
+def call_subprocess(command, log_level=logging.INFO):
     logger.debug('call_subprocess: %s', command)
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stderr=subprocess.PIPE,
     )
 
-    while process.poll() is None:
-        while True:
-            output = process.stdout.readline().decode()
-            if not output:
-                break
-            logger.log(logging.INFO, output.strip())
+    stdout, stderr = process.communicate()
+    stdout = stdout.strip()
+    stderr = stderr.strip()
+
+    rc = process.returncode
+    if stdout:
+        logger.log(log_level, stdout)
+    if stderr:
+        logger.warning(stderr)
+    if rc:
+        raise RuntimeError('{cmd} exited with code {code}'.format(
+            cmd=command[0],
+            code=rc,
+        ))
 
 
 def create_virtualenv(directory):

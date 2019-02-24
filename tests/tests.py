@@ -519,7 +519,7 @@ class TestTerrarium(TerrariumTester):
             'bin',
             'terrarium',
         )
-        config['opts'] = '-vv'
+        config['opts'] = '-VV'
 
         self.assertInstall(
             no_backup=True,
@@ -576,7 +576,7 @@ class TestTerrarium(TerrariumTester):
         command = 'hash %s' % (
             self.requirements,
         )
-        self.config['opts'] = '-vv'
+        self.config['opts'] = '-VV'
         (stdout, stderr), return_code = self._terrarium(
             command,
             s3_secret_key='should_not_appear',

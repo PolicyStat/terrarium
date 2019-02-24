@@ -696,8 +696,10 @@ def extract_tar_archive(archive, target):
     compression_opt = compression_map.get(archive_type)
 
     if compression_opt is None:
-        logger.error('Failed to extract archive, unknown or unsupported file type')
-        return
+        raise RuntimeError(
+            'Failed to extract archive, unknown or unsupported file type',
+        )
+
     if not os.path.exists(target):
         os.mkdir(target)
     command = [

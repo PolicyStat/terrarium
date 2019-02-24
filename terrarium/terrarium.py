@@ -578,6 +578,12 @@ def pip_install_wheels(virtualenv, wheel_dir):
     pip_path = os.path.join(virtualenv, 'bin', 'pip')
     requirements_path = os.path.join(wheel_dir, 'requirements.txt')
 
+    # Copy requirements.txt to the virtualenv
+    shutil.copyfile(
+        requirements_path,
+        os.path.join(virtualenv, 'requirements.txt'),
+    )
+
     command = [
         pip_path,
         'install',

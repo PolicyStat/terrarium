@@ -771,7 +771,18 @@ def initialize_logging(args):
         logger.setLevel(level)
 
 
+def update_python_warnings():
+    existing_warnings = os.environ.get('PYTHONWARNINGS', '').strip()
+    warnings = []
+    if existing_warnings:
+        warnings = existing_warnings.split(',')
+    warnings.extend(PYTHONWARNINGS)
+    os.environ['PYTHONWARNINGS'] = ','.join(warnings)
+
+
 def main():
+    update_python_warnings()
+
     logging.basicConfig(
         stream=sys.stdout,
         level=logging.DEBUG,

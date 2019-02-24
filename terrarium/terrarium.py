@@ -734,6 +734,8 @@ def parse_requirements(path, ignore_comments=True):
 
 
 def rmtree(path):
+    if not os.path.exists(path):
+        return
     logger.debug('rmtree: %s', path)
     try:
         if os.path.islink(path):

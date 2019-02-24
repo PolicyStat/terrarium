@@ -746,9 +746,11 @@ def rmtree(path):
             os.unlink(path)
     except OSError as why:
         raise RuntimeError(
-            'Failed to remove %s. Make sure you have permissions to this path. %s',
-            path,
-            why,
+            'Failed to remove {path}. '
+            'Make sure you have permissions to this path. {why}'.format(
+                path=path,
+                why=why,
+            )
         )
 
 

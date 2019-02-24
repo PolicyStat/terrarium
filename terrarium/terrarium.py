@@ -285,14 +285,13 @@ class Terrarium(object):
 
 
 def define_args():
-    ap = argparse.ArgumentParser()
-    ap.add_argument(
-        '-V', '--version',
-        action='version',
-        version='%(prog)s ',
+    import terrarium
+    ap = argparse.ArgumentParser(
+        prog='terrarium',
+        version=terrarium.__version__,
     )
     ap.add_argument(
-        '-v', '--verbose',
+        '-V', '--verbose',
         action='count',
         default=0,
         dest='verbose_count',

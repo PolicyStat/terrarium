@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import argparse
+import glob
 import hashlib
 import logging
 import os
@@ -584,14 +585,24 @@ def pip_install_wheels(virtualenv, wheel_dir):
         os.path.join(virtualenv, 'requirements.txt'),
     )
 
+    # note: --find-links + --requirement
+    # the reason the command below isn't using --find-links + --requirement is
+    # because of how pip behaves when requirements.txt contains a remote source
+    # requirement. In this situation, pip ignores the wheel in the wheel_dir
+    # and instead downloads the requirement from the source
+
+    wheels = glob.glob(os.path.join(wheel_dir, '*.whl'))
+    if not wheels:
+        logger.warning('wheel directory has no wheels: %s', wheel_dir)
+        return
+
     command = [
         pip_path,
         'install',
         '--no-index',
         '--no-cache-dir',
-        '--find-links', wheel_dir,
-        '--requirement', requirements_path,
     ]
+    command.extend(wheels)
     call_subprocess(command)
 
 

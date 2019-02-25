@@ -550,15 +550,20 @@ def call_subprocess(command, log_level=logging.INFO):
         stderr=subprocess.PIPE,
     )
 
-    stdout, stderr = process.communicate()
-    stdout = stdout.strip()
-    stderr = stderr.strip()
+    while process.poll() is None:
+        while True:
+            stdout = process.stdout.readline()
+            stderr = process.stderr.readline()
+            if not stdout and not stderr:
+                break
+            stdout = stdout.strip()
+            if stdout:
+                logger.log(log_level, stdout.decode())
+            stderr = stderr.strip()
+            if stderr:
+                logger.warning(stderr.decode())
 
     rc = process.returncode
-    if stdout:
-        logger.log(log_level, stdout)
-    if stderr:
-        logger.warning(stderr)
     if rc:
         raise RuntimeError('{cmd} exited with code {code}'.format(
             cmd=command[0],

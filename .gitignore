@@ -1,3 +1,4 @@
+docs/_build
 build
 dist
 terrarium.egg-info

@@ -1,3 +1,10 @@
+**1.2.0**
+
+- Support virtualenv 16 and 15
+- Added wheel distribution to PyPI.
+- Improved packaging (setup.cfg) and tox configuration
+- Announced deprecation for Python 2.7
+
 **1.1.0**
 
 - `Droped support for virtualenv<15 <https://github.com/PolicyStat/terrarium/pull/66>`_

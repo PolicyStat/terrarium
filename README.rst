@@ -3,7 +3,7 @@ Terrarium
 #########
 
 .. image:: https://img.shields.io/pypi/v/terrarium.svg
-   :target: https://crate.io/packages/terrarium
+   :target: https://pypi.org/project/terrarium
 
 .. image:: https://secure.travis-ci.org/PolicyStat/terrarium.png?branch=master
    :target: http://travis-ci.org/PolicyStat/terrarium

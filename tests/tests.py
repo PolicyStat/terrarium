@@ -247,8 +247,6 @@ class TestTerrarium(TerrariumTester):
         self.assertExists(
             os.path.join(self.target, 'bin', pythonVV)
         )
-
-        # Check for terrarium bootstrap script
         self.assertExists(
             os.path.join(self.target, 'requirements.txt')
         )

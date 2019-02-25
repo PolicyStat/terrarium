@@ -732,13 +732,22 @@ def parse_requirements(path, ignore_comments=True):
     logger.debug('parse_requirements: %s', path)
     with open(path) as f:
         lines = f.readlines()
+    containing_dir = os.path.dirname(path)
     for line in lines:
         line = line.strip()
         if ignore_comments and line.startswith('#'):
             continue
         if line.startswith(('-r', '--requirement')):
             _, ref_name = line.split()
-            ref_path = os.path.join(os.path.dirname(path), ref_name)
+            # TODO - Can ref_name be an absolute path?
+            ref_path = os.path.join(containing_dir, ref_name)
+            if not os.path.exists(ref_path):
+                raise RuntimeError(
+                    'Requirements {} contains ref that does not exist: {}'.format(
+                        path,
+                        ref_path,
+                    )
+                )
             ref_lines = parse_requirements(
                 ref_path,
                 ignore_comments=ignore_comments,

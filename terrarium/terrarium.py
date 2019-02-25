@@ -801,7 +801,7 @@ def main():
 
     logging.basicConfig(
         stream=sys.stdout,
-        level=logging.DEBUG,
+        level=logging.WARNING,
         format='[%(levelname)s] %(message)s',
     )
 

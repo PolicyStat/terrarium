@@ -1,4 +1,8 @@
-include AUTHORS LICENSE README.rst
-recursive-include docs *.rst *.py
+include AUTHORS LICENSE README.rst CHANGELOG.rst tox.ini
+recursive-include terrarium *.py
+recursive-include docs *.rst *.py Makefile
 recursive-include requirements *.txt
 recursive-include tests *.py
+
+global-exclude *.py[co]
+global-exclude __pycache__

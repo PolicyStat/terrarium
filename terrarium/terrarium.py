@@ -72,7 +72,7 @@ class Terrarium(object):
         rmtree(target)
 
         logger.info('Renaming %s to %s', backup, target)
-        os.rename(backup, target)
+        move_or_rename(backup, target)
 
     def get_target_location(self):
         return os.path.abspath(self.args.target)
@@ -125,13 +125,13 @@ class Terrarium(object):
         target_path_temp = target_path + '.temp'
         try:
             if existing_target:
-                os.rename(target_path, target_path_temp)
+                move_or_rename(target_path, target_path_temp)
             install_environment(local_archive_path, target_path)
         except: # noqa - is there a better way to do this?
             if existing_target:
                 # restore the original environment
                 rmtree(target_path)
-                os.rename(target_path_temp, target_path)
+                move_or_rename(target_path_temp, target_path)
             raise
 
         if existing_backup:
@@ -140,7 +140,7 @@ class Terrarium(object):
 
         if existing_target:
             if self.args.backup:
-                os.rename(target_path_temp, backup_path)
+                move_or_rename(target_path_temp, backup_path)
             else:
                 rmtree(target_path_temp)
 
@@ -230,7 +230,7 @@ class Terrarium(object):
             )
         temp = make_temp_file(dir=storage_dir)
         shutil.copyfile(archive, temp)
-        os.rename(temp, dest)
+        move_or_rename(temp, dest)
         logger.info('Archive copied to storage directory')
 
     def upload_to_s3(self, archive):
@@ -756,6 +756,12 @@ def parse_requirements(path, ignore_comments=True):
                 yield inner_line
         else:
             yield line
+
+
+def move_or_rename(src, dst):
+    if src == dst:
+        return
+    return shutil.move(src, dst)
 
 
 def rmtree(path):

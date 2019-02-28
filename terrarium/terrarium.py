@@ -54,8 +54,11 @@ class Terrarium(object):
             return self._requirements
         lines = []
         for path in self.args.reqs:
-            if os.path.exists(path):
-                lines.extend(parse_requirements(path=path))
+            if not os.path.exists(path):
+                raise RuntimeError(
+                    'Requirements file {} does not exist'.format(path)
+                )
+            lines.extend(parse_requirements(path=path))
         self._requirements = lines
         return self._requirements
 

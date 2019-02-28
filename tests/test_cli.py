@@ -67,6 +67,17 @@ class CommandLineInterfaceTestCase(unittest.TestCase):
         assert stderr.startswith('usage: terrarium')
         assert stderr.endswith('terrarium: error: too few arguments')
 
+    def test_install_requirements_file_does_not_exist(self):
+        file_name = _unique_name()
+        expected_stdout = '[ERROR] Requirements file {} does not exist'.format(file_name)
+
+        options = '--target={} install {}'.format(self.target, file_name)
+
+        rc, stdout, stderr = terrarium(options)
+        self.assertEqual(rc, 1)
+        self.assertEqual(stdout, expected_stdout)
+        self.assertEqual(stderr, '')
+
     def test_install_to_target(self):
         file_name = _create_simple_requirements_file()
 

@@ -25,6 +25,7 @@ except ImportError:
     gcs = None
 
 __version__ = '1.2.0'
+TERRARIUM_VERSION = __version__
 
 logger = logging.getLogger(__name__)
 
@@ -285,10 +286,9 @@ class Terrarium(object):
 
 
 def define_args():
-    import terrarium
     ap = argparse.ArgumentParser(
         prog='terrarium',
-        version=terrarium.__version__,
+        version=TERRARIUM_VERSION,
     )
     ap.add_argument(
         '-V', '--verbose',

@@ -2,8 +2,8 @@ import os
 import shlex
 import subprocess
 import sys
+import tempfile
 import unittest
-import uuid
 
 
 def run_command(command):
@@ -253,8 +253,8 @@ def _file_exists(*path_spec):
     return os.path.exists(os.path.join(*path_spec))
 
 
-def _unique_name():
-    return uuid.uuid4().hex
+def _unique_name(**kwargs):
+    return tempfile.mktemp(**kwargs)
 
 
 def _create_file(content, *path_spec):

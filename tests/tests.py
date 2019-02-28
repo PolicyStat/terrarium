@@ -180,7 +180,7 @@ class TerrariumTester(unittest.TestCase):
     def _add_terrarium_requirement(self):
         import virtualenv
         self._add_requirements(
-            self._get_path_terrarium(),
+            os.environ['TOX_PACKAGE'],
             'virtualenv==%s' % virtualenv.virtualenv_version
         )
 

@@ -3,7 +3,6 @@ install:
   - pip install -U pip
   - pip install tox
 env:
-  - TOX_ENV=py27-build
   - TOX_ENV=py27-virtualenv-latest
   - TOX_ENV=py27-virtualenv-previous
   - TOX_ENV=py27-flake8

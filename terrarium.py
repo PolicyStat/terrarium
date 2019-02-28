@@ -24,9 +24,9 @@ try:
 except ImportError:
     gcs = None
 
+__version__ = '1.2.0'
 
 logger = logging.getLogger(__name__)
-
 
 PYTHONWARNINGS_IGNORE_PIP_PYTHON2_DEPRECATION = (
     'ignore:DEPRECATION::pip._internal.cli.base_command'

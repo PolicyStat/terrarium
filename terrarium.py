@@ -24,7 +24,16 @@ try:
 except ImportError:
     gcs = None
 
-__version__ = '1.2.0'
+
+if __name__ == '__main__':
+    __version__ = 'standalone'
+else:
+    from pkg_resources import get_distribution, DistributionNotFound
+    try:
+        __version__ = get_distribution(__name__).version
+    except DistributionNotFound:  # package is not installed
+        __version__ = None
+
 TERRARIUM_VERSION = __version__
 
 logger = logging.getLogger(__name__)

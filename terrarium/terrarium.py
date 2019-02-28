@@ -64,7 +64,7 @@ class Terrarium(object):
 
     def restore_previously_backed_up_environment(self):
         backup = self.get_backup_location()
-        if not self.environment_exists(backup):
+        if not os.path.exists(backup):
             raise RuntimeError(
                 'Failed to restore backup. '
                 "It doesn't appear to exist at {}".format(backup),
@@ -85,10 +85,6 @@ class Terrarium(object):
             target = self.get_target_location()
         return ''.join([target, self.args.backup_suffix])
 
-    def environment_exists(self, env):
-        path_to_activate = os.path.join(env, 'bin', 'activate')
-        return os.path.exists(path_to_activate)
-
     def install(self):
         '''
         1. Attempt to download prebuilt environment
@@ -102,8 +98,8 @@ class Terrarium(object):
         target_path = self.get_target_location()
         backup_path = self.get_backup_location()
 
-        existing_target = self.environment_exists(target_path)
-        existing_backup = self.environment_exists(backup_path)
+        existing_target = os.path.exists(target_path)
+        existing_backup = os.path.exists(backup_path)
 
         downloaded = False
         if self.args.download:

@@ -254,7 +254,8 @@ def _file_exists(*path_spec):
 
 
 def _unique_name(**kwargs):
-    return tempfile.mktemp(**kwargs)
+    prefix = kwargs.pop('prefix', 'terrarium-test-')
+    return tempfile.mktemp(prefix=prefix, **kwargs)
 
 
 def _create_file(content, *path_spec):

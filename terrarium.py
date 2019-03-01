@@ -25,8 +25,18 @@ except ImportError:
     gcs = None
 
 
-logger = logging.getLogger(__name__)
+if __name__ == '__main__':
+    __version__ = 'standalone'
+else:
+    from pkg_resources import get_distribution, DistributionNotFound
+    try:
+        __version__ = get_distribution(__name__).version
+    except DistributionNotFound:  # package is not installed
+        __version__ = None
 
+TERRARIUM_VERSION = __version__
+
+logger = logging.getLogger(__name__)
 
 PYTHONWARNINGS_IGNORE_PIP_PYTHON2_DEPRECATION = (
     'ignore:DEPRECATION::pip._internal.cli.base_command'
@@ -54,14 +64,17 @@ class Terrarium(object):
             return self._requirements
         lines = []
         for path in self.args.reqs:
-            if os.path.exists(path):
-                lines.extend(parse_requirements(path=path))
+            if not os.path.exists(path):
+                raise RuntimeError(
+                    'Requirements file {} does not exist'.format(path)
+                )
+            lines.extend(parse_requirements(path=path))
         self._requirements = lines
         return self._requirements
 
     def restore_previously_backed_up_environment(self):
         backup = self.get_backup_location()
-        if not self.environment_exists(backup):
+        if not os.path.exists(backup):
             raise RuntimeError(
                 'Failed to restore backup. '
                 "It doesn't appear to exist at {}".format(backup),
@@ -72,7 +85,7 @@ class Terrarium(object):
         rmtree(target)
 
         logger.info('Renaming %s to %s', backup, target)
-        os.rename(backup, target)
+        move_or_rename(backup, target)
 
     def get_target_location(self):
         return os.path.abspath(self.args.target)
@@ -81,10 +94,6 @@ class Terrarium(object):
         if target is None:
             target = self.get_target_location()
         return ''.join([target, self.args.backup_suffix])
-
-    def environment_exists(self, env):
-        path_to_activate = os.path.join(env, 'bin', 'activate')
-        return os.path.exists(path_to_activate)
 
     def install(self):
         '''
@@ -99,8 +108,8 @@ class Terrarium(object):
         target_path = self.get_target_location()
         backup_path = self.get_backup_location()
 
-        existing_target = self.environment_exists(target_path)
-        existing_backup = self.environment_exists(backup_path)
+        existing_target = os.path.exists(target_path)
+        existing_backup = os.path.exists(backup_path)
 
         downloaded = False
         if self.args.download:
@@ -125,13 +134,13 @@ class Terrarium(object):
         target_path_temp = target_path + '.temp'
         try:
             if existing_target:
-                os.rename(target_path, target_path_temp)
+                move_or_rename(target_path, target_path_temp)
             install_environment(local_archive_path, target_path)
         except: # noqa - is there a better way to do this?
             if existing_target:
                 # restore the original environment
                 rmtree(target_path)
-                os.rename(target_path_temp, target_path)
+                move_or_rename(target_path_temp, target_path)
             raise
 
         if existing_backup:
@@ -140,7 +149,7 @@ class Terrarium(object):
 
         if existing_target:
             if self.args.backup:
-                os.rename(target_path_temp, backup_path)
+                move_or_rename(target_path_temp, backup_path)
             else:
                 rmtree(target_path_temp)
 
@@ -163,7 +172,7 @@ class Terrarium(object):
         return conn.get_bucket(self.args.gcs_bucket)
 
     def download(self):
-        local_path = make_temp_file()
+        local_path = make_temp_file(suffix='.tea')
 
         # make remote key for extenal storage system
         remote_key = self.make_remote_key()
@@ -230,7 +239,7 @@ class Terrarium(object):
             )
         temp = make_temp_file(dir=storage_dir)
         shutil.copyfile(archive, temp)
-        os.rename(temp, dest)
+        move_or_rename(temp, dest)
         logger.info('Archive copied to storage directory')
 
     def upload_to_s3(self, archive):
@@ -286,10 +295,9 @@ class Terrarium(object):
 
 
 def define_args():
-    import terrarium
     ap = argparse.ArgumentParser(
         prog='terrarium',
-        version=terrarium.__version__,
+        version=TERRARIUM_VERSION,
     )
     ap.add_argument(
         '-V', '--verbose',
@@ -661,13 +669,13 @@ def calculate_digest_for_requirements(digest_type, requirements):
 
 
 def gzip_compress(target):
-    call_subprocess(['gzip', target])
+    call_subprocess(['gzip', '--force', target])
     return '{}.gz'.format(target)
 
 
 def create_tar_archive(directory):
     logger.debug('create_tar_archive: %s', directory)
-    archive_path = make_temp_file()
+    archive_path = make_temp_file(suffix='.tar')
     command = [
         'tar',
         '--create',
@@ -756,6 +764,12 @@ def parse_requirements(path, ignore_comments=True):
                 yield inner_line
         else:
             yield line
+
+
+def move_or_rename(src, dst):
+    if src == dst:
+        return
+    return shutil.move(src, dst)
 
 
 def rmtree(path):

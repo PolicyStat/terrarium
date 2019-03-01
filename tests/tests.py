@@ -1,9 +1,10 @@
+# new tests should be added to test_cli.py, not here
+
 from __future__ import absolute_import
 
 import copy
 import hashlib
 import os
-import platform
 import shlex
 import shutil
 import subprocess
@@ -179,7 +180,7 @@ class TerrariumTester(unittest.TestCase):
     def _add_terrarium_requirement(self):
         import virtualenv
         self._add_requirements(
-            self._get_path_terrarium(),
+            os.environ['TOX_PACKAGE'],
             'virtualenv==%s' % virtualenv.virtualenv_version
         )
 
@@ -217,52 +218,6 @@ class TerrariumTester(unittest.TestCase):
 
 
 class TestTerrarium(TerrariumTester):
-
-    def test_no_params(self):
-        (stdout, stderr), return_code = self._terrarium()
-        self.assertEqual(return_code, 2)
-        self.assertNotEqual(stderr, '')
-        self.assertEqual(stdout, '')
-
-    def test_help(self):
-        output, return_code = self._terrarium('-h')
-        self.assertEqual(return_code, 0)
-
-    def test_install_empty_requirements(self):
-        # Check that we can install an empty requirements file
-        self.assertNotExists(self.python)
-        self.assertInstall()
-
-        # check for activate script
-        self.assertExists(
-            os.path.join(self.target, 'bin', 'activate')
-        )
-
-        # Check for python binary
-        self.assertExists(self.python)
-
-        # Check for python
-        version = platform.python_version_tuple()
-        pythonVV = 'python%s.%s' % (version[0], version[1])
-        self.assertExists(
-            os.path.join(self.target, 'bin', pythonVV)
-        )
-        self.assertExists(
-            os.path.join(self.target, 'requirements.txt')
-        )
-
-    def test_install_with_requirement(self):
-        # Verify that a requirement can be used after it is installed
-        self._add_test_requirement()
-        self.assertInstall()
-        # Include a negative test as a control
-        actual = self._can_import_requirements(
-            'test_requirement',
-            'asdasdasd',  # should not exist
-        )
-        expected = ['test_requirement']
-        self.assertEqual(actual, expected)
-
     def test_install_requirements_with_dependency(self):
         # This test involves a requirements file with two items,
         # test_requirement and foo_requirement. foo_requirement has
@@ -318,31 +273,6 @@ class TestTerrarium(TerrariumTester):
         self.assertEqual(return_code, 0)
         self.assertEqual(stdout.strip(), expected_digest)
         self.assertEqual(stderr, '')
-
-    def test_install_replace_backup_exists(self):
-        # Verify that a backup of the old environment is created when replacing
-        # it
-        self.assertInstall()
-        self.assertInstall()
-        self.assertExists('%s.bak' % self.target)
-
-    def test_install_no_backup(self):
-        # Verify that --no-backup deletes the backup when replacing an existing
-        # environment
-        self.assertInstall()
-        self.assertInstall(no_backup=True)
-        self.assertNotExists('%s.bak' % self.target)
-
-    def test_install_replace_old_backup_removed(self):
-        # After doing two installs, we have test and test.bak. On a third
-        # install, test.bak already exists, so renaming test to test.bak will
-        # fail. Verify that the original test.bak is deleted, only the
-        # most-recent backup is preserved
-        self.assertInstall()
-        self.assertInstall()
-        self.assertExists('%s.bak' % self.target)
-        self.assertInstall()
-        self.assertExists('%s.bak' % self.target)
 
     def test_install_old_backup_symlink(self):
         # Create a scenario where the backup (from a previous install) is
@@ -543,33 +473,6 @@ class TestTerrarium(TerrariumTester):
         self.assertNotEqual('', stdout)
         self.assertEqual('', stderr)
 
-    def test_boto_required_to_use_s3_bucket(self):
-        self._add_test_requirement()
-
-        stdout, stderr = self.assertInstall(
-            return_code=2,
-            s3_bucket='bucket',
-        )
-        self.assertTrue(
-            'error: --s3-bucket requires that you have boto installed, '
-            'which does not appear to be the case'
-            in stderr
-        )
-
-    def test_gcs_required_to_use_gcs_bucket(self):
-        self._add_test_requirement()
-
-        stdout, stderr = self.assertInstall(
-            return_code=2,
-            gcs_bucket='bucket',
-        )
-        self.assertEqual('', stdout)
-        self.assertTrue(
-            'error: --gcs-bucket requires that you have gcloud installed, '
-            'which does not appear to be the case'
-            in stderr
-        )
-
     def test_sensitive_arguments_are_sensitive(self):
         command = 'hash %s' % (
             self.requirements,
@@ -613,19 +516,3 @@ class TestTerrarium(TerrariumTester):
         self.assertNotExists('%s.bak' % self.target)
         self.assertExists(os.path.join(self.target, 'foo'))
         self.assertNotExists(os.path.join(self.target, 'moo'))
-
-    def test_require_download(self):
-        self._add_test_requirement()
-
-        stdout, stderr = self.assertInstall(
-            return_code=1,
-            storage_dir=self.storage_dir,
-            require_download=True,
-        )
-        self.assertEqual('', stderr)
-        self.assertEqual(
-            stdout.strip(),
-            '[ERROR] Failed to download environment and download is required. '
-            'Refusing to build a new environment.',
-        )
-        self.assertNotExists(self.python)

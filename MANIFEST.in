@@ -1,5 +1,5 @@
 include AUTHORS LICENSE README.rst CHANGELOG.rst tox.ini
-recursive-include terrarium *.py
+include terrarium.py
 recursive-include docs *.rst *.py Makefile
 recursive-include requirements *.txt
 recursive-include tests *.py

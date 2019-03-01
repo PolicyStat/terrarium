@@ -172,7 +172,7 @@ class Terrarium(object):
         return conn.get_bucket(self.args.gcs_bucket)
 
     def download(self):
-        local_path = make_temp_file()
+        local_path = make_temp_file(suffix='.tea')
 
         # make remote key for extenal storage system
         remote_key = self.make_remote_key()
@@ -669,13 +669,13 @@ def calculate_digest_for_requirements(digest_type, requirements):
 
 
 def gzip_compress(target):
-    call_subprocess(['gzip', target])
+    call_subprocess(['gzip', '--force', target])
     return '{}.gz'.format(target)
 
 
 def create_tar_archive(directory):
     logger.debug('create_tar_archive: %s', directory)
-    archive_path = make_temp_file()
+    archive_path = make_temp_file(suffix='.tar')
     command = [
         'tar',
         '--create',

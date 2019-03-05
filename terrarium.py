@@ -300,11 +300,18 @@ def define_args():
         version=TERRARIUM_VERSION,
     )
     ap.add_argument(
-        '-V', '--verbose',
-        action='count',
-        default=0,
-        dest='verbose_count',
-        help='Increase verbosity. Default shows only warnings and errors.',
+        '--debug',
+        action='store_true',
+        default=False,
+        dest='log_level_debug',
+        help='Show ALL (DEBUG+) log messages',
+    )
+    ap.add_argument(
+        '--info',
+        action='store_true',
+        default=False,
+        dest='log_level_info',
+        help='Show INFO+ log messages',
     )
     ap.add_argument(
         '-q', '--quiet',
@@ -801,13 +808,14 @@ def make_temp_file(**kwargs):
 
 
 def initialize_logging(args):
+    level = logging.WARNING
     if args.quiet:
         logger.disabled = True
-    else:
-        level = logging.WARNING
-        level -= args.verbose_count * 10
-        level = max(level, logging.DEBUG)
-        logger.setLevel(level)
+    elif args.log_level_debug:
+        level = logging.DEBUG
+    elif args.log_level_info:
+        level = logging.INFO
+    logger.setLevel(level)
 
 
 def update_python_warnings():

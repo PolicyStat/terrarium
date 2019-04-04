@@ -66,6 +66,15 @@ The following options are only available if ``gcloud`` is installed.
     e.g. ``S3_BUCKET``, ``GCS_BUCKET``
     instead of being passed in as a parameter.
 
+Using Python 3 inside virtualenv
+================================
+
+Use ``-p`` argument to choose Python executable installed in virtualenv:
+
+.. code-block:: shell-session
+
+    $ terrarium -p python3.6 --target env --storage-dir path/to/environments install requirements.txt
+
 Tips
 ####
 

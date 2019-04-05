@@ -668,7 +668,7 @@ def create_environment(requirements, compress=True):
 
 def calculate_digest_for_requirements(digest_type, requirements):
     h = hashlib.new(digest_type)
-    h.update(flatten_requirements(requirements))
+    h.update(flatten_requirements(requirements).encode('utf8'))
     return h.hexdigest()
 
 

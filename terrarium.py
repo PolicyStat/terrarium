@@ -852,7 +852,7 @@ def main():
         elif args.command == 'revert':
             terrarium.restore_previously_backed_up_environment()
     except RuntimeError as e:
-        logger.error(e.message)
+        logger.error(e)
         sys.exit(1)
 
 

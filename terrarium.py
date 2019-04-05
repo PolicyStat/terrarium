@@ -297,6 +297,10 @@ class Terrarium(object):
 def define_args():
     ap = argparse.ArgumentParser(
         prog='terrarium',
+    )
+    ap.add_argument(
+        '--version',
+        action='version',
         version=TERRARIUM_VERSION,
     )
     ap.add_argument(
